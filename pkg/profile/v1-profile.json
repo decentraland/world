@@ -1,0 +1,22 @@
+{
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "bodyShape": {
+      "type": "string",
+      "enum": [ "boy", "girl" ]
+    },
+    "nose": {
+      "type": "string",
+      "enum": [ "A", "B", "C" ]
+    },
+    "torso": {
+      "type": "string",
+      "enum": [ "small", "medium", "large" ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [ "schemaVersion" ]
+}
