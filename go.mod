@@ -3,7 +3,8 @@ module github.com/decentraland/world
 go 1.12
 
 require (
-	github.com/decentraland/auth-go v0.0.0-20190424204857-f4a8990046b8
+	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
+	github.com/decentraland/auth-go v0.0.0-20190424210517-90ab935498b0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect

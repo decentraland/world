@@ -85,6 +85,24 @@ func TestGetProfile(t *testing.T) {
 	db := prepareDb(t)
 	router := prepareEngine(t, db, serverKey)
 
+	t.Run("Invalid auth data should return 401", func(t *testing.T) {
+		sk, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		accessToken, err := generateAccessToken(sk, getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey), 0, "user1")
+		if err != nil {
+			t.Error(err.Error())
+		}
+
+		req, _ := http.NewRequest("GET", "/profile", nil)
+
+		if err := credential.AddRequestHeaders(req, accessToken); err != nil {
+			t.Error(err.Error())
+		}
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
 	t.Run("No profile stored should return 404", func(t *testing.T) {
 		_, err := db.Exec("DELETE FROM profiles")
 		require.NoError(t, err)
