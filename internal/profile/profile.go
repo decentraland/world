@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	definitions "github.com/decentraland/world/pkg/profile"
 	"github.com/gin-gonic/gin"
@@ -17,11 +18,6 @@ type ProfileV1 = definitions.ProfileV1
 type Services struct {
 	Log *logrus.Logger
 	Db  *sql.DB
-}
-
-type profileRow struct {
-	data          []byte
-	schemaVersion int32
 }
 
 func Register(services Services, router gin.IRouter) error {
@@ -43,6 +39,7 @@ func Register(services Services, router gin.IRouter) error {
 		return err
 	}
 
+	internalError := gin.H{"error": "internal error, please retry later"}
 	router.GET("/profile", func(c *gin.Context) {
 		// TODO: validate access token first
 		userId := "user1"
@@ -58,18 +55,35 @@ func Register(services Services, router gin.IRouter) error {
 
 		if err != nil {
 			log.WithError(err).Error("query profile failed")
-			c.JSON(500, gin.H{"error": err})
+			c.JSON(500, internalError)
 			return
 		}
 
 		var profile ProfileV1
 		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
-			c.JSON(500, gin.H{"error": err})
+			c.JSON(500, internalError)
 			return
 		}
 
-		// TODO validate schema
+		documentLoader := gojsonschema.NewGoLoader(profile)
+		result, err := schema.Validate(documentLoader)
+		if err != nil {
+			log.WithError(err).Error("json validation failed")
+			c.JSON(500, internalError)
+			return
+		}
+
+		if !result.Valid() {
+			errors := make([]string, 0, len(result.Errors()))
+			for _, desc := range result.Errors() {
+				errors = append(errors, desc.String())
+			}
+			log.Errorf("invalid response from get profile: %s", strings.Join(errors, ", "))
+			c.JSON(500, internalError)
+			return
+		}
+
 		c.JSON(200, profile)
 	})
 
@@ -88,7 +102,7 @@ func Register(services Services, router gin.IRouter) error {
 		result, err := schema.Validate(documentLoader)
 		if err != nil {
 			log.WithError(err).Error("json validation failed")
-			c.JSON(500, gin.H{"error": err})
+			c.JSON(500, internalError)
 			return
 		}
 
@@ -105,7 +119,7 @@ func Register(services Services, router gin.IRouter) error {
 		var profile ProfileV1
 		if err := json.Unmarshal(data, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
-			c.JSON(500, gin.H{"error": err})
+			c.JSON(500, internalError)
 			return
 		}
 
@@ -117,7 +131,7 @@ DO UPDATE SET schema_version = $2, profile = $3`,
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")
-			c.JSON(500, gin.H{"error": err})
+			c.JSON(500, internalError)
 			return
 		}
 
