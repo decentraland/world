@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
+	"net/http"
+	"path"
 	"strings"
 
 	definitions "github.com/decentraland/world/pkg/profile"
@@ -20,18 +21,18 @@ type Services struct {
 	Db  *sql.DB
 }
 
-func Register(services Services, router gin.IRouter) error {
+type Config struct {
+	SchemaDir string
+	Services  Services
+}
+
+func Register(config *Config, router gin.IRouter) error {
+	services := config.Services
 	log := services.Log
 	db := services.Db
 
 	sl := gojsonschema.NewSchemaLoader()
-
-	path, err := filepath.Abs("pkg/profile/v1-profile.json")
-	if err != nil {
-		log.WithError(err).Error("error getting profile schema abspath")
-		return err
-	}
-
+	path := path.Join(config.SchemaDir, "v1-profile.json")
 	schemaLoader := gojsonschema.NewReferenceLoader(fmt.Sprintf("file://%s", path))
 	schema, err := sl.Compile(schemaLoader)
 	if err != nil {
@@ -39,7 +40,7 @@ func Register(services Services, router gin.IRouter) error {
 		return err
 	}
 
-	internalError := gin.H{"error": "internal error, please retry later"}
+	internalError := gin.H{"error": "Internal error, please retry later"}
 	router.GET("/profile", func(c *gin.Context) {
 		// TODO: validate access token first
 		userId := "user1"
@@ -49,20 +50,20 @@ func Register(services Services, router gin.IRouter) error {
 		var jsonProfile []byte
 		err := row.Scan(&jsonProfile)
 		if err == sql.ErrNoRows {
-			c.JSON(404, gin.H{})
+			c.JSON(http.StatusNotFound, gin.H{})
 			return
 		}
 
 		if err != nil {
 			log.WithError(err).Error("query profile failed")
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
 		var profile ProfileV1
 		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
@@ -70,7 +71,7 @@ func Register(services Services, router gin.IRouter) error {
 		result, err := schema.Validate(documentLoader)
 		if err != nil {
 			log.WithError(err).Error("json validation failed")
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
@@ -80,7 +81,7 @@ func Register(services Services, router gin.IRouter) error {
 				errors = append(errors, desc.String())
 			}
 			log.Errorf("invalid response from get profile: %s", strings.Join(errors, ", "))
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
@@ -94,7 +95,7 @@ func Register(services Services, router gin.IRouter) error {
 		data, err := c.GetRawData()
 		if err != nil {
 			log.WithError(err).Error("get raw data failed")
-			c.JSON(500, gin.H{"error": err})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
 
@@ -102,7 +103,7 @@ func Register(services Services, router gin.IRouter) error {
 		result, err := schema.Validate(documentLoader)
 		if err != nil {
 			log.WithError(err).Error("json validation failed")
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
@@ -119,7 +120,7 @@ func Register(services Services, router gin.IRouter) error {
 		var profile ProfileV1
 		if err := json.Unmarshal(data, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
@@ -131,11 +132,11 @@ DO UPDATE SET schema_version = $2, profile = $3`,
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")
-			c.JSON(500, internalError)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
-		c.JSON(204, gin.H{})
+		c.JSON(http.StatusNoContent, gin.H{})
 	})
 
 	return nil

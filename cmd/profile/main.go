@@ -17,6 +17,7 @@ func main() {
 	host := flag.String("host", "localhost", "")
 	port := flag.Int("port", 8081, "")
 	connStr := flag.String("connStr", "", "psql connection string")
+	schemaDir := flag.String("schemaDir", "pkg/profile", "Path to the directory containing json schema files")
 	flag.Parse()
 
 	log := logrus.New()
@@ -32,8 +33,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	services := profile.Services{Log: log, Db: db}
-	err = profile.Register(services, router)
+	config := profile.Config{
+		Services:  profile.Services{Log: log, Db: db},
+		SchemaDir: *schemaDir,
+	}
+	err = profile.Register(&config, router)
 	if err != nil {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
