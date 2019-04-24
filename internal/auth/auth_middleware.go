@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"fmt"
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	"github.com/decentraland/auth-go/pkg/authentication"
 	"github.com/decentraland/auth-go/pkg/authorization"
 	"github.com/decentraland/auth-go/pkg/keys"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -23,21 +23,22 @@ const (
 	AuthThirdParty = "third_party"
 )
 
-func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
+func NewAuthMiddleware(c *Configuration) func(ctx *gin.Context) {
 	switch strings.ToLower(c.Mode) {
 	case AuthOff:
-		return createMiddleWare(c)
-	case AuthThirdParty:
 		return dummyMiddleWare(c)
+	case AuthThirdParty:
+		return createMiddleWare(c)
 	default:
-		return nil, fmt.Errorf("undefined authentication mode: %s", c.Mode)
+		log.Fatalf("undefined authentication mode: %s", c.Mode)
 	}
+	return nil
 }
 
-func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
+func createMiddleWare(c *Configuration) func(ctx *gin.Context) {
 	k, err := keys.PemDecodePublicKey(c.AuthKey)
 	if err != nil {
-		return nil, err
+		log.Fatalf("fail to create middleware: %s", err.Error())
 	}
 
 	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: c.RequestTTL, TrustedKey: k}
@@ -59,11 +60,11 @@ func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
 			return
 		}
 		ctx.Next()
-	}, nil
+	}
 }
 
-func dummyMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
-	return nil, nil
+func dummyMiddleWare(c *Configuration) func(ctx *gin.Context) {
+	return nil
 }
 
 func handleError(err error, ctx *gin.Context) {

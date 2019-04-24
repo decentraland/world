@@ -42,8 +42,7 @@ func Register(config *Config, router gin.IRouter) error {
 
 	internalError := gin.H{"error": "Internal error, please retry later"}
 	router.GET("/profile", func(c *gin.Context) {
-		// TODO: validate access token first
-		userId := "user1"
+		userId := c.GetString("userId")
 
 		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userId)
 
@@ -89,8 +88,7 @@ func Register(config *Config, router gin.IRouter) error {
 	})
 
 	router.POST("/profile", func(c *gin.Context) {
-		// TODO: validate access token first
-		userId := "user1"
+		userId := c.GetString("userId")
 
 		data, err := c.GetRawData()
 		if err != nil {

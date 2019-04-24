@@ -1,16 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
-
-	"database/sql"
+	"github.com/decentraland/world/internal/auth"
+	"os"
 
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	ginlogrus "github.com/toorop/gin-logrus"
+	"github.com/toorop/gin-logrus"
 )
 
 func main() {
@@ -33,6 +34,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	setupAuthentication(router)
+
 	config := profile.Config{
 		Services:  profile.Services{Log: log, Db: db},
 		SchemaDir: *schemaDir,
@@ -44,4 +47,12 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%d", *host, *port)
 	router.Run(addr)
+}
+
+func setupAuthentication(r *gin.Engine) {
+	authPubKey := os.Getenv("AUTH_KEY")
+	authConfig := &auth.Configuration{Mode: auth.AuthThirdParty, AuthKey:authPubKey, RequestTTL: 60}
+
+	r.Use(auth.NewAuthMiddleware(authConfig))
+	r.Use(auth.IdExtractorMiddleware)
 }
