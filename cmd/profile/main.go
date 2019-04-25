@@ -5,13 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/decentraland/world/internal/auth"
-	"os"
-
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/toorop/gin-logrus"
+	"os"
 )
 
 func main() {
@@ -34,7 +33,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	setupAuthentication(router)
+	if err := setupAuthentication(router); err != nil {
+		log.Fatal(err)
+	}
 
 	config := profile.Config{
 		Services:  profile.Services{Log: log, Db: db},
@@ -46,13 +47,21 @@ func main() {
 	}
 
 	addr := fmt.Sprintf("%s:%d", *host, *port)
-	router.Run(addr)
+
+	if err := router.Run(addr); err != nil {
+		log.WithError(err).Fatal("Fail to start server.")
+	}
 }
 
-func setupAuthentication(r *gin.Engine) {
+func setupAuthentication(r *gin.Engine) error {
 	authPubKey := os.Getenv("AUTH_KEY")
 	authConfig := &auth.Configuration{Mode: auth.AuthThirdParty, AuthKey:authPubKey, RequestTTL: 60}
 
-	r.Use(auth.NewAuthMiddleware(authConfig))
+	authMiddleware, err := auth.NewAuthMiddleware(authConfig)
+	if err != nil {
+		return err
+	}
+	r.Use(authMiddleware)
 	r.Use(auth.IdExtractorMiddleware)
+	return nil
 }

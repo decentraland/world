@@ -59,13 +59,13 @@ func prepareEngine(t *testing.T, db *sql.DB, serverKey *ecdsa.PrivateKey) *gin.E
 
 	router := gin.Default()
 	pubk, err := keys.PemEncodePublicKey(&serverKey.PublicKey)
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	require.NoError(t, err)
 
 	authConfig := &auth.Configuration{Mode: auth.AuthThirdParty, AuthKey: pubk, RequestTTL: 6000}
-	router.Use(auth.NewAuthMiddleware(authConfig))
+	mw, err := auth.NewAuthMiddleware(authConfig)
+	require.NoError(t, err)
+
+	router.Use(mw)
 	router.Use(auth.IdExtractorMiddleware)
 	profile.Register(&config, router)
 	return router
@@ -73,14 +73,10 @@ func prepareEngine(t *testing.T, db *sql.DB, serverKey *ecdsa.PrivateKey) *gin.E
 
 func TestGetProfile(t *testing.T) {
 	serverKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Error(err.Error())
-	}
+	require.NoError(t, err)
 
 	credential, err := ephemeral.GenerateSimpleCredential(36000)
-	if err != nil {
-		t.Error(err.Error())
-	}
+	require.NoError(t, err)
 
 	db := prepareDb(t)
 	router := prepareEngine(t, db, serverKey)
@@ -88,15 +84,12 @@ func TestGetProfile(t *testing.T) {
 	t.Run("Invalid auth data should return 401", func(t *testing.T) {
 		sk, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		accessToken, err := generateAccessToken(sk, getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey), 0, "user1")
-		if err != nil {
-			t.Error(err.Error())
-		}
+		require.NoError(t, err)
 
 		req, _ := http.NewRequest("GET", "/profile", nil)
 
-		if err := credential.AddRequestHeaders(req, accessToken); err != nil {
-			t.Error(err.Error())
-		}
+		err = credential.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -108,12 +101,12 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		accessToken, err := generateAccessToken(serverKey, getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey), 6000, "user1")
+		require.NoError(t, err)
 
 		req, _ := http.NewRequest("GET", "/profile", nil)
 
-		if err := credential.AddRequestHeaders(req, accessToken); err != nil {
-			t.Error(err.Error())
-		}
+		err = credential.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -127,12 +120,12 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		accessToken, err := generateAccessToken(serverKey, getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey), 6000, "user1")
+		require.NoError(t, err)
 
 		req, _ := http.NewRequest("GET", "/profile", nil)
 
-		if err := credential.AddRequestHeaders(req, accessToken); err != nil {
-			t.Error(err.Error())
-		}
+		err = credential.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -157,12 +150,12 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		accessToken, err := generateAccessToken(serverKey, getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey), 6000, "user1")
+		require.NoError(t, err)
 
 		req, _ := http.NewRequest("GET", "/profile", nil)
 
-		if err := credential.AddRequestHeaders(req, accessToken); err != nil {
-			t.Error(err.Error())
-		}
+		err = credential.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
