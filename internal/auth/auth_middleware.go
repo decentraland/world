@@ -2,14 +2,15 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	"github.com/decentraland/auth-go/pkg/authentication"
 	"github.com/decentraland/auth-go/pkg/authorization"
 	"github.com/decentraland/auth-go/pkg/keys"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"net/http"
-	"strings"
 )
 
 type Configuration struct {
@@ -51,7 +52,14 @@ func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
 		}
 		ok, err := authHandler.ApproveRequest(req)
 		if err != nil {
-			handleError(err, ctx)
+			switch err := err.(type) {
+			case auth2.AuthenticationError:
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			case auth2.AuthorizationError:
+				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			default:
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 		if !ok {
@@ -60,17 +68,6 @@ func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
 		}
 		ctx.Next()
 	}, nil
-}
-
-func handleError(err error, ctx *gin.Context) {
-	switch err := err.(type) {
-	case auth2.AuthenticationError:
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-	case auth2.AuthorizationError:
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-	default:
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
 }
 
 func IdExtractorMiddleware(ctx *gin.Context) {
