@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	overwriteEnvKey = "overwrite-env"
-	overwriteArgKey = "overwrite-arg"
+	overwriteEnvKey  = "overwrite-env"
+	overwriteFlagKey = "overwrite-flag"
+	flagUsage        = "flag-usage"
 )
 
 func ReadConfiguration(configPath string, c interface{}) error {
@@ -86,7 +87,7 @@ func overwriteFields(parent string, f reflect.StructField, v *viper.Viper) error
 	return nil
 }
 
-func overwriteValue(prefix string, f reflect.StructField, v *viper.Viper, setFlag func(v *viper.Viper, flagVal string, key string)) error {
+func overwriteValue(prefix string, f reflect.StructField, v *viper.Viper, setFlag func(v *viper.Viper, flagVal string, key string, usage string)) error {
 	tag := f.Tag
 	if len(tag) > 0 {
 		val, ok := tag.Lookup(overwriteEnvKey)
@@ -96,23 +97,31 @@ func overwriteValue(prefix string, f reflect.StructField, v *viper.Viper, setFla
 				return err
 			}
 		}
-		val, ok = tag.Lookup(overwriteArgKey)
+		val, ok = tag.Lookup(overwriteFlagKey)
 		if ok {
 			key := prefix + f.Name
-			setFlag(v, val, key)
+			setFlag(v, val, key, getUsage(tag))
 		}
 	}
 	return nil
 }
 
-func setStringFlag(v *viper.Viper, flagVal string, key string) {
-	viper.Set(key, flag.String(flagVal, viper.GetString(key), ""))
+func setStringFlag(v *viper.Viper, flagVal string, key string, usage string) {
+	viper.Set(key, flag.String(flagVal, viper.GetString(key), usage))
 }
 
-func setBoolFlag(v *viper.Viper, flagVal string, key string) {
-	viper.Set(key, flag.Bool(flagVal, viper.GetBool(key), ""))
+func setBoolFlag(v *viper.Viper, flagVal string, key string, usage string) {
+	viper.Set(key, flag.Bool(flagVal, viper.GetBool(key), usage))
 }
 
-func setIntFlag(v *viper.Viper, flagVal string, key string) {
-	viper.Set(key, flag.Int(flagVal, viper.GetInt(key), ""))
+func setIntFlag(v *viper.Viper, flagVal string, key string, usage string) {
+	viper.Set(key, flag.Int(flagVal, viper.GetInt(key), usage))
+}
+
+func getUsage(tag reflect.StructTag) string {
+	val, ok := tag.Lookup(flagUsage)
+	if ok {
+		return val
+	}
+	return ""
 }

@@ -14,14 +14,14 @@ import (
 )
 
 type Configuration struct {
-	Mode       string
-	AuthKey    string
-	RequestTTL int64
+	Mode       string `overwrite-flag:"auth-mode" flag-usage:"auth mode, values: off, third-party"`
+	AuthKey    string `overwrite-env:"AUTH_KEY"`
+	RequestTTL int    `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
 }
 
 const (
 	AuthOff        = "off"
-	AuthThirdParty = "third_party"
+	AuthThirdParty = "third-party"
 )
 
 func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
@@ -41,7 +41,7 @@ func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
 		return nil, err
 	}
 
-	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: c.RequestTTL, TrustedKey: k}
+	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: int64(c.RequestTTL), TrustedKey: k}
 	authHandler := auth2.NewAuthProvider(authnStrategy, &authorization.AllowAllStrategy{})
 
 	return func(ctx *gin.Context) {
