@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/validation"
 	"reflect"
 
 	"github.com/spf13/viper"
@@ -17,6 +18,11 @@ const (
 
 func ReadConfiguration(configPath string, c interface{}) error {
 	t := reflect.TypeOf(c)
+
+	v, err := validation.DefaultValidator()
+	if err != nil {
+		return err
+	}
 
 	switch t.Kind() {
 	case reflect.Ptr, reflect.Interface:
@@ -39,11 +45,11 @@ func ReadConfiguration(configPath string, c interface{}) error {
 
 		flag.Parse()
 
-		err = viper.Unmarshal(c)
-		if err != nil {
+		if err := viper.Unmarshal(c); err != nil {
 			return err
 		}
-		return nil
+
+		return v.ValidateStruct(c)
 	case reflect.Struct:
 		return errors.New("configuration to load need to be a pointer")
 	default:
@@ -70,6 +76,10 @@ func overwriteFields(parent string, f reflect.StructField, v *viper.Viper) error
 		}
 	case reflect.Int:
 		if err := overwriteValue(prefix, f, v, setIntFlag); err != nil {
+			return err
+		}
+	case reflect.Int64:
+		if err := overwriteValue(prefix, f, v, setInt64Flag); err != nil {
 			return err
 		}
 	case reflect.String:
@@ -116,6 +126,10 @@ func setBoolFlag(v *viper.Viper, flagVal string, key string, usage string) {
 
 func setIntFlag(v *viper.Viper, flagVal string, key string, usage string) {
 	viper.Set(key, flag.Int(flagVal, viper.GetInt(key), usage))
+}
+
+func setInt64Flag(v *viper.Viper, flagVal string, key string, usage string) {
+	viper.Set(key, flag.Int64(flagVal, viper.GetInt64(key), usage))
 }
 
 func getUsage(tag reflect.StructTag) string {

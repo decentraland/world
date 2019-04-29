@@ -13,10 +13,10 @@ import (
 )
 
 type ProfileConfig struct {
-	Host      string `overwrite-flag:"host"      flag-usage:"host name"`
-	Port      int    `overwrite-flag:"port"      flag-usage:"host port"`
-	ConnStr   string `overwrite-flag:"connStr"   flag-usage:"psql connection string"`
-	SchemaDir string `overwrite-flag:"schemaDir" flag-usage:"path to the directory containing json schema files"`
+	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+	ConnStr   string `overwrite-flag:"connStr"   flag-usage:"psql connection string" validate:"required"`
+	SchemaDir string `overwrite-flag:"schemaDir" flag-usage:"path to the directory containing json schema files" validate:"required"`
 	Auth      auth.Configuration
 }
 
