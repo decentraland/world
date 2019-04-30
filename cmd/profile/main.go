@@ -13,7 +13,6 @@ import (
 )
 
 type ProfileConfig struct {
-	Bla      string  `validate:"required"`
 	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 	ConnStr   string `overwrite-flag:"connStr"   flag-usage:"psql connection string" validate:"required"`
