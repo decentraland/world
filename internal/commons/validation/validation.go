@@ -65,7 +65,6 @@ func setupMessages(v *validator.Validate, translations map[string]string) (ut.Tr
 	return trans, nil
 }
 
-
 func addTranslation(tag string, messageTemplate string, trans ut.Translator, v *validator.Validate) error {
 	return v.RegisterTranslation(tag, trans, func(ut ut.Translator) error {
 		return ut.Add(tag, messageTemplate, true)

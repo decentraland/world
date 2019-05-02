@@ -19,7 +19,7 @@ const (
 func ReadConfiguration(configPath string, c interface{}) error {
 	t := reflect.TypeOf(c)
 
-	v, err := validation.WithMessages(map[string]string{"required": "missing required configuration: {0}"} )
+	v, err := validation.WithMessages(map[string]string{"required": "missing required configuration: {0}"})
 	if err != nil {
 		return err
 	}

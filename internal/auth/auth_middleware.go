@@ -2,21 +2,21 @@ package auth
 
 import (
 	"fmt"
+	"github.com/decentraland/world/internal/commons/utils"
 	"net/http"
 	"strings"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	"github.com/decentraland/auth-go/pkg/authentication"
 	"github.com/decentraland/auth-go/pkg/authorization"
-	"github.com/decentraland/auth-go/pkg/keys"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Configuration struct {
-	Mode       string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
-	AuthKey    string `overwrite-env:"AUTH_KEY"`
-	RequestTTL int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
+	Mode        string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
+	AuthKeyPath string `overwrite-flag:"trusted-key" flag-usage:"path to the file containing the auth-service public key"`
+	RequestTTL  int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
 }
 
 const (
@@ -36,7 +36,7 @@ func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 }
 
 func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
-	k, err := keys.PemDecodePublicKey(c.AuthKey)
+	k, err := utils.ReadPublicKeyFromFile(c.AuthKeyPath)
 	if err != nil {
 		return nil, err
 	}

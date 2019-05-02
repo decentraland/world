@@ -25,7 +25,6 @@ func TestDefaultValidator(t *testing.T) {
 	assert.Equal(t, "Required field is required.", err.Error())
 }
 
-
 func TestValidatorTranslations(t *testing.T) {
 	messages := map[string]string{}
 	messages["required"] = "you should set the {0} field!!!!"
