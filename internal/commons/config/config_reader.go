@@ -4,8 +4,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/decentraland/world/internal/commons/validation"
 	"reflect"
+
+	"github.com/decentraland/world/internal/commons/validation"
 
 	"github.com/spf13/viper"
 )

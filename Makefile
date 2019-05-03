@@ -2,6 +2,9 @@ PROFILE_TEST_DB_CONN_STR ?= "postgres://postgres:docker@localhost/profiletest?ss
 
 build:
 	go build -o build/profile ./cmd/profile
+	go build -o build/bots ./cmd/comms/bots
+	go build -o build/coordinator ./cmd/comms/coordinator
+	go build -o build/server ./cmd/comms/server
 
 fmt:
 	gofmt -w .
