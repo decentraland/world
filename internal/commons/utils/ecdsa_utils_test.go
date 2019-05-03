@@ -5,8 +5,9 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/hex"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPemEncodePublicKey(t *testing.T) {
@@ -32,7 +33,6 @@ func TestPemEncodePublicKey(t *testing.T) {
 
 	assert.Equal(t, firstEncode, secondEncode)
 }
-
 
 func TestPemEncodePrivateKey(t *testing.T) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

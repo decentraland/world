@@ -3,9 +3,10 @@ package auth
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/decentraland/world/internal/commons/utils"
 	"net/http"
 	"strings"
+
+	"github.com/decentraland/world/internal/commons/utils"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	"github.com/decentraland/auth-go/pkg/authentication"

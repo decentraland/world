@@ -3,13 +3,14 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/decentraland/world/internal/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	"github.com/toorop/gin-logrus"
+	ginlogrus "github.com/toorop/gin-logrus"
 )
 
 type ProfileConfig struct {

@@ -6,13 +6,14 @@ require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
 	github.com/decentraland/auth-go v0.0.0-20190424210517-90ab935498b0
+	github.com/decentraland/webrtc-broker v0.0.0-20190506180307-526886364a72
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-playground/locales v0.12.1
 	github.com/go-playground/universal-translator v0.16.0
-	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/golang/protobuf v1.3.1
 	github.com/google/uuid v1.1.1
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/leodido/go-urn v1.1.0 // indirect
@@ -20,9 +21,11 @@ require (
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/pion/webrtc/v2 v2.0.7
+	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.2.2
+	github.com/stretchr/testify v1.3.0
 	github.com/toorop/gin-logrus v0.0.0-20190324082946-8887861896bb
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
