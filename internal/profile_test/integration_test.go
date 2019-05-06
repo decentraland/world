@@ -58,8 +58,7 @@ func prepareEngine(t *testing.T, db *sql.DB, serverKey *ecdsa.PrivateKey) *gin.E
 
 	router := gin.Default()
 
-	authConfig := &auth.Configuration{Mode: auth.AuthThirdParty, AuthKey: &serverKey.PublicKey, RequestTTL: 6000}
-	mw, err := auth.NewAuthMiddleware(authConfig)
+	mw, err := auth.NewThirdPartyAuthMiddleware(&serverKey.PublicKey, 6000)
 	require.NoError(t, err)
 
 	router.Use(mw)

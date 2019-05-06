@@ -18,7 +18,6 @@ type Configuration struct {
 	Mode        string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
 	AuthKeyPath string `overwrite-flag:"trusted-key" flag-usage:"path to the file containing the auth-service public key"`
 	RequestTTL  int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
-	AuthKey     *ecdsa.PublicKey
 }
 
 const (
@@ -31,19 +30,18 @@ func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 	case AuthOff:
 		return nil, nil
 	case AuthThirdParty:
-		return createMiddleWare(c)
+		k, err := utils.ReadPublicKeyFromFile(c.AuthKeyPath)
+		if err != nil {
+			return nil, err
+		}
+		return NewThirdPartyAuthMiddleware(k, c.RequestTTL)
 	default:
 		return nil, fmt.Errorf("undefined authentication mode: %s", c.Mode)
 	}
 }
 
-func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
-	k, err := getPrivateKey(c)
-	if err != nil {
-		return nil, err
-	}
-
-	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: c.RequestTTL, TrustedKey: k}
+func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64) (func(ctx *gin.Context), error) {
+	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: reqTtl, TrustedKey: pubKey}
 	authHandler := auth2.NewAuthProvider(authnStrategy, &authorization.AllowAllStrategy{})
 
 	return func(ctx *gin.Context) {
@@ -91,11 +89,4 @@ func DummyIdExtractor(ctx *gin.Context) {
 	}
 	ctx.Set("userId", id)
 	ctx.Next()
-}
-
-func getPrivateKey(c *Configuration) (*ecdsa.PublicKey, error) {
-	if c.AuthKey != nil {
-		return c.AuthKey, nil
-	}
-	return utils.ReadPublicKeyFromFile(c.AuthKeyPath)
 }
