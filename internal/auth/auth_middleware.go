@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"github.com/decentraland/world/internal/commons/utils"
 	"net/http"
@@ -17,6 +18,7 @@ type Configuration struct {
 	Mode        string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
 	AuthKeyPath string `overwrite-flag:"trusted-key" flag-usage:"path to the file containing the auth-service public key"`
 	RequestTTL  int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
+	AuthKey     *ecdsa.PublicKey
 }
 
 const (
@@ -36,7 +38,7 @@ func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 }
 
 func createMiddleWare(c *Configuration) (func(ctx *gin.Context), error) {
-	k, err := utils.ReadPublicKeyFromFile(c.AuthKeyPath)
+	k, err := getPrivateKey(c)
 	if err != nil {
 		return nil, err
 	}
@@ -89,4 +91,11 @@ func DummyIdExtractor(ctx *gin.Context) {
 	}
 	ctx.Set("userId", id)
 	ctx.Next()
+}
+
+func getPrivateKey(c *Configuration) (*ecdsa.PublicKey, error) {
+	if c.AuthKey != nil {
+		return c.AuthKey, nil
+	}
+	return utils.ReadPublicKeyFromFile(c.AuthKeyPath)
 }

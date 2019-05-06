@@ -22,7 +22,6 @@ import (
 	"database/sql"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
-	"github.com/decentraland/auth-go/pkg/keys"
 	"github.com/decentraland/world/internal/auth"
 	"github.com/decentraland/world/internal/profile"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -58,10 +57,8 @@ func prepareEngine(t *testing.T, db *sql.DB, serverKey *ecdsa.PrivateKey) *gin.E
 	}
 
 	router := gin.Default()
-	pubk, err := keys.PemEncodePublicKey(&serverKey.PublicKey)
-	require.NoError(t, err)
 
-	authConfig := &auth.Configuration{Mode: auth.AuthThirdParty, AuthKey: pubk, RequestTTL: 6000}
+	authConfig := &auth.Configuration{Mode: auth.AuthThirdParty, AuthKey: &serverKey.PublicKey, RequestTTL: 6000}
 	mw, err := auth.NewAuthMiddleware(authConfig)
 	require.NoError(t, err)
 
