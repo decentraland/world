@@ -26,10 +26,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/decentraland/auth-go v0.0.0-20190424210517-90ab935498b0 h1:7Dta616mnHMRFl6x9BKlfbVD9Lw54nFxlA/XmGe9TJE=
 github.com/decentraland/auth-go v0.0.0-20190424210517-90ab935498b0/go.mod h1:BnhGuJGx6SBW/mW/GwnkZp+SYo8nZsLE7OmH+SSri90=
-github.com/decentraland/webrtc-broker v0.0.0-20190506171219-06ab1a15cc02 h1:JscGQBJDPmgAlIXI6TsXCauHTZJx5+BnTABodIaeKFA=
-github.com/decentraland/webrtc-broker v0.0.0-20190506171219-06ab1a15cc02/go.mod h1:ftiqMRETdweeg3Lfbv9NjiJqmPn8xP17lHItwYIb9Do=
-github.com/decentraland/webrtc-broker v0.0.0-20190506180307-526886364a72 h1:FB7CdtRV63QAscKywGP43hiYDa7sJpoxjIDxrEezUvo=
-github.com/decentraland/webrtc-broker v0.0.0-20190506180307-526886364a72/go.mod h1:ftiqMRETdweeg3Lfbv9NjiJqmPn8xP17lHItwYIb9Do=
+github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344 h1:sRDtWxHQK4IDgap3GLOuJWick5DSAcA8YR7mRXREQ7A=
+github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344/go.mod h1:gVCV2+LyQEtBdPGRBooQ3qoz4gmqc8QsiAfhYvfgpks=
 github.com/deckarep/golang-set v1.7.1 h1:SCQV0S6gTtp6itiFrTqI+pfmJ4LN85S1YzhDf9rTHJQ=
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=

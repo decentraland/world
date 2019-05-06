@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
-	protocol "github.com/decentraland/webrtc-broker/pkg/protocol"
+	broker "github.com/decentraland/webrtc-broker/pkg/protocol"
 	"github.com/decentraland/webrtc-broker/pkg/simulation"
+	"github.com/decentraland/world/pkg/protocol"
 	"github.com/golang/protobuf/proto"
 	pion "github.com/pion/webrtc/v2"
 	"github.com/segmentio/ksuid"
@@ -83,8 +84,8 @@ func encodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
 		return nil, err
 	}
 
-	msg := &protocol.TopicMessage{
-		Type:  protocol.MessageType_TOPIC,
+	msg := &broker.TopicMessage{
+		Type:  broker.MessageType_TOPIC,
 		Topic: topic,
 		Body:  body,
 	}
@@ -135,15 +136,15 @@ func Start(options *BotOptions) {
 
 	if options.TrackStats {
 		trackCh := make(chan []byte, 256)
-		config.OnMessageReceived = func(reliable bool, msgType protocol.MessageType, raw []byte) {
-			if !reliable && msgType == protocol.MessageType_DATA {
+		config.OnMessageReceived = func(reliable bool, msgType broker.MessageType, raw []byte) {
+			if !reliable && msgType == broker.MessageType_DATA {
 				trackCh <- raw
 			}
 		}
 
 		go func() {
 			peers := make(map[uint64]*simulation.Stats)
-			dataMessage := protocol.DataMessage{}
+			dataMessage := broker.DataMessage{}
 			dataHeader := protocol.DataHeader{}
 
 			onMessage := func(rawMsg []byte) {

@@ -1,3 +1,4 @@
+PROTOC ?= protoc
 PROFILE_TEST_DB_CONN_STR ?= "postgres://postgres:docker@localhost/profiletest?sslmode=disable"
 
 build:
@@ -18,5 +19,8 @@ vtest-integration: test-integration
 
 tidy:
 	go mod tidy
+
+compile-protocol:
+	cd pkg/protocol; ${PROTOC} --js_out=import_style=commonjs,binary:. --ts_out=. --go_out=. ./comms.proto
 
 .PHONY: build
