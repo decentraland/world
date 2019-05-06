@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"strconv"
 
 	"github.com/decentraland/world/internal/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	ginlogrus "github.com/toorop/gin-logrus"
+	"github.com/toorop/gin-logrus"
 )
 
 type ProfileConfig struct {
@@ -49,10 +49,8 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
-
-	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
-
-	if err := router.Run(addr); err != nil {
+	
+	if err := router.Run(":" + strconv.Itoa(conf.Port)); err != nil {
 		log.WithError(err).Fatal("Fail to start server.")
 	}
 }
