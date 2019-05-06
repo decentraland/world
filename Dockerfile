@@ -8,4 +8,6 @@ ENV GOOS=linux
 
 COPY . .
 RUN make
+RUN chmod 775 entrypoint.d/entrypoint.sh
+ENTRYPOINT ["entrypoint.d/entrypoint.sh"]
 CMD build/profile --connStr="$CONNECTION_STRING"
