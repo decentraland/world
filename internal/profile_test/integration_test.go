@@ -98,7 +98,7 @@ func TestGetProfile(t *testing.T) {
 		accessToken, err := generateAccessToken(sk, addr, 0, "user1")
 		require.NoError(t, err)
 
-		req, _ := http.NewRequest("GET", "/profile", nil)
+		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestGetProfile(t *testing.T) {
 		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user1")
 		require.NoError(t, err)
 
-		req, _ := http.NewRequest("GET", "/profile", nil)
+		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
@@ -134,7 +134,7 @@ func TestGetProfile(t *testing.T) {
 		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user1")
 		require.NoError(t, err)
 
-		req, _ := http.NewRequest("GET", "/profile", nil)
+		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
@@ -163,7 +163,7 @@ func TestGetProfile(t *testing.T) {
 		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user1")
 		require.NoError(t, err)
 
-		req, _ := http.NewRequest("GET", "/profile", nil)
+		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
@@ -192,7 +192,7 @@ func TestPostProfile(t *testing.T) {
 		_, err = db.Exec("DELETE FROM profiles")
 		require.NoError(t, err)
 
-		req, _ := http.NewRequest("POST", "/profile", strings.NewReader(`{"bodyShape": "alien"}`))
+		req, _ := http.NewRequest("POST", "/api/v1/profile", strings.NewReader(`{"bodyShape": "alien"}`))
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
@@ -209,7 +209,7 @@ func TestPostProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		reader := strings.NewReader(`{"schemaVersion": 1, "bodyShape": "girl"}`)
-		req, _ := http.NewRequest("POST", "/profile", reader)
+		req, _ := http.NewRequest("POST", "/api/v1/profile", reader)
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 

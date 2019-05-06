@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/auth"
 	"net/http"
 	"path"
 	"strings"
@@ -40,8 +41,14 @@ func Register(config *Config, router gin.IRouter) error {
 		return err
 	}
 
+	api := router.Group("/api")
+	v1 := api.Group("/v1")
+	profile := v1.Group("/profile")
+
+	profile.Use(auth.IdExtractorMiddleware)
+
 	internalError := gin.H{"error": "Internal error, please retry later"}
-	router.GET("/profile", func(c *gin.Context) {
+	profile.GET("", func(c *gin.Context) {
 		userId := c.GetString("userId")
 
 		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userId)
@@ -87,7 +94,7 @@ func Register(config *Config, router gin.IRouter) error {
 		c.JSON(200, profile)
 	})
 
-	router.POST("/profile", func(c *gin.Context) {
+	profile.POST("", func(c *gin.Context) {
 		userId := c.GetString("userId")
 
 		data, err := c.GetRawData()
