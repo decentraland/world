@@ -62,7 +62,8 @@ func setupAuthentication(r *gin.Engine, authConfig *auth.Configuration) error {
 	if err != nil {
 		return err
 	}
-	r.Use(authMiddleware)
-	r.Use(auth.IdExtractorMiddleware)
+	if authMiddleware != nil {
+		r.Use(authMiddleware)
+	}
 	return nil
 }
