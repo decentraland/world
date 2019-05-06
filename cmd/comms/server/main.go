@@ -1,20 +1,30 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"net/http"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
+	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
-
-	_ "net/http/pprof"
 )
+
+type commServerConfig struct {
+	CoordinatorHost string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+	CoordinatorPort int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+	Version         string `overwrite-flag:"version"`
+	LogLevel        string `overwrite-flag:"logLevel"`
+	NoopAuthEnabled bool   `overwrite-flag:"noopEnabled"`
+}
 
 func main() {
 	log := logging.New()
 	defer logging.LogPanic()
+
+	var conf commServerConfig
+	if err := configuration.ReadConfiguration("config/comms/config", &conf); err != nil {
+		log.Fatal(err)
+	}
 
 	auth := authentication.Make()
 	config := commserver.Config{
@@ -25,43 +35,24 @@ func main() {
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
+		CoordinatorURL: fmt.Sprintf("ws://%s:%d/discover", conf.CoordinatorHost, conf.CoordinatorPort),
+		AuthMethod:     "noop",
 	}
 
-	flag.StringVar(&config.CoordinatorURL, "coordinatorUrl", "ws://localhost:9090", "")
-	flag.StringVar(&config.AuthMethod, "authMethod", "secret", "noop")
-
-	version := flag.String("version", "UNKNOWN", "")
-	logLevel := flag.String("logLevel", "debug", "")
-	profilerPort := flag.Int("profilerPort", -1, "If not provided, profiler won't be enabled")
-	noopAuthEnabled := flag.Bool("noopAuthEnabled", false, "")
-
-	flag.Parse()
-
-	if err := logging.SetLevel(log, *logLevel); err != nil {
-		log.Error("error setting log level")
-		return
+	if err := logging.SetLevel(log, conf.LogLevel); err != nil {
+		log.Fatal("error setting log level")
 	}
 
-	if *profilerPort != -1 {
-		go func() {
-			addr := fmt.Sprintf("localhost:%d", *profilerPort)
-			log.Info("Starting profiler at ", addr)
-			log.Debug(http.ListenAndServe(addr, nil))
-		}()
-	}
-
-	if *noopAuthEnabled {
+	if conf.NoopAuthEnabled {
 		auth.AddOrUpdateAuthenticator("noop", &authentication.NoopAuthenticator{})
 	}
 
-	config.CoordinatorURL = fmt.Sprintf("%s/discover", config.CoordinatorURL)
 	state, err := commserver.MakeState(&config)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Info("starting communication server node - version:", *version)
+	log.Infof("starting communication server - version: %s", conf.Version)
 
 	if err := commserver.ConnectCoordinator(state); err != nil {
 		log.Fatal("connect coordinator failure ", err)

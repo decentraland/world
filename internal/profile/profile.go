@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/decentraland/world/internal/auth"
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/decentraland/world/internal/auth"
 
 	definitions "github.com/decentraland/world/pkg/profile"
 	"github.com/gin-gonic/gin"

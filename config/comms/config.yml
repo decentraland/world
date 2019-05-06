@@ -1,0 +1,3 @@
+coordinatorHost: 'localhost'
+coordinatorPort: 9090
+logLevel:        'info'
