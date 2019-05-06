@@ -1,4 +1,4 @@
-host:       'localhost'   # Set -host flag to overwrite this value
+host:       '0.0.0.0'   # Set -host flag to overwrite this value
 port:       8081          # Set -port flag to overwrite this value
 connStr:    ""            # Set -connStr flag to overwrite this value
 schemaDir:  "pkg/profile" # Set -schemaDir flag to overwrite this value
