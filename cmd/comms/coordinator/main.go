@@ -1,32 +1,38 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
+	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
 )
 
-func main() {
-	host := flag.String("host", "localhost", "")
-	port := flag.Int("port", 9090, "")
-	version := flag.String("version", "UNKNOWN", "")
-	logLevel := flag.String("logLevel", "debug", "")
-	noopAuthEnabled := flag.Bool("noopAuthEnabled", false, "")
-	flag.Parse()
+type coordinatorConfig struct {
+	CoordinatorHost string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+	CoordinatorPort int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+	Version         string `overwrite-flag:"version"`
+	LogLevel        string `overwrite-flag:"logLevel"`
+	NoopAuthEnabled bool   `overwrite-flag:"noopEnabled"`
+}
 
+func main() {
 	log := logging.New()
-	if err := logging.SetLevel(log, *logLevel); err != nil {
-		log.Error("error setting log level")
-		return
-	}
 	defer logging.LogPanic()
 
+	var conf coordinatorConfig
+	if err := configuration.ReadConfiguration("config/comms/config", &conf); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := logging.SetLevel(log, conf.LogLevel); err != nil {
+		log.Fatal("error setting log level")
+	}
+
 	auth := authentication.Make()
-	if *noopAuthEnabled {
+	if conf.NoopAuthEnabled {
 		auth.AddOrUpdateAuthenticator("noop", &authentication.NoopAuthenticator{})
 	}
 
@@ -42,7 +48,7 @@ func main() {
 	mux := http.NewServeMux()
 	coordinator.Register(state, mux)
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
-	log.Info("starting coordinator ", addr, "- version:", *version)
+	addr := fmt.Sprintf("%s:%d", conf.CoordinatorHost, conf.CoordinatorPort)
+	log.Infof("starting coordinator %s - version: %s", addr, conf.Version)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }

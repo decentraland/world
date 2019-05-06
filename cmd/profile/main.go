@@ -13,7 +13,7 @@ import (
 	"github.com/toorop/gin-logrus"
 )
 
-type ProfileConfig struct {
+type profileConfig struct {
 	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 	ConnStr   string `overwrite-flag:"connStr"   flag-usage:"psql connection string" validate:"required"`
@@ -22,12 +22,11 @@ type ProfileConfig struct {
 }
 
 func main() {
-
 	log := logrus.New()
 	router := gin.Default()
 	router.Use(ginlogrus.Logger(log), gin.Recovery())
 
-	var conf ProfileConfig
+	var conf profileConfig
 	if err := configuration.ReadConfiguration("config/profile/config", &conf); err != nil {
 		log.Fatal(err)
 	}
@@ -45,11 +44,11 @@ func main() {
 		Services:  profile.Services{Log: log, Db: db},
 		SchemaDir: conf.SchemaDir,
 	}
-	err = profile.Register(&config, router)
-	if err != nil {
+
+	if err = profile.Register(&config, router); err != nil {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
-	
+
 	if err := router.Run(":" + strconv.Itoa(conf.Port)); err != nil {
 		log.WithError(err).Fatal("Fail to start server.")
 	}

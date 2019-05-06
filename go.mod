@@ -5,8 +5,8 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
-	github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344
 	github.com/decentraland/auth-go v0.0.0-20190506171720-25115afad45b
+	github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
