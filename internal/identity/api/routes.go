@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/decentraland/world/internal/commons/token"
 	"github.com/decentraland/world/internal/commons/utils"
+	"github.com/decentraland/world/internal/gindcl"
 	"github.com/decentraland/world/internal/identity/data"
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/decentraland/world/internal/identity/validation"
@@ -52,7 +53,7 @@ func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin
 		return err
 	}
 
-	router.Use(corsMiddleware())
+	router.Use(gindcl.CorsMiddleware())
 
 	app := &Application{auth0: auth0Service, generator: generator, pubkey: publicKey, clientRepository: clientRepository, serverUrl: serverUrl, validator: validator.New()}
 
@@ -66,9 +67,9 @@ func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin
 	v1.POST("/token", app.token)
 
 	// Handle pre-flight checks one by one
-	v1.OPTIONS("/public_key", handlePrefligthCheck("GET", "*"))
-	v1.OPTIONS("/auth", handlePrefligthCheck("POST", "*"))
-	v1.OPTIONS("/token", handlePrefligthCheck("POST", "*"))
+	v1.OPTIONS("/public_key", gindcl.PrefligthChecksMiddleware("GET", "*"))
+	v1.OPTIONS("/auth", gindcl.PrefligthChecksMiddleware("POST", "*"))
+	v1.OPTIONS("/token", gindcl.PrefligthChecksMiddleware("POST", "*"))
 
 	return nil
 }
@@ -139,14 +140,6 @@ func (a *Application) token(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"access_token": token})
 }
 
-func handlePrefligthCheck(allowedMethods string, allowedHeaders string) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Methods", allowedMethods)
-		c.Header("Access-Control-Allow-Headers", allowedHeaders)
-		c.AbortWithStatus(http.StatusNoContent)
-	}
-}
-
 func buildUrl(basePath string, relPath string, args ...interface{}) string {
 	u, _ := url.Parse(basePath)
 	u.Path = path.Join(u.Path, fmt.Sprintf(relPath, args...))
@@ -170,11 +163,4 @@ func getAuthData(clientRepository repository.ClientRepository, req AuthRequest, 
 		LoginUrl:  buildUrl(serverUrl, "/login/%s", client.Id),
 		LogoutUrl: buildUrl(serverUrl, "/logout/%s", client.Id),
 	}, nil
-}
-
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Next()
-	}
 }

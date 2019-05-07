@@ -2,6 +2,7 @@ package main
 
 import (
 	configuration "github.com/decentraland/world/internal/commons/config"
+	"github.com/decentraland/world/internal/commons/logging"
 	"github.com/decentraland/world/internal/commons/utils"
 	"github.com/decentraland/world/internal/identity/api"
 	"github.com/decentraland/world/internal/identity/data"
@@ -11,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/toorop/gin-logrus"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -38,7 +38,10 @@ func main() {
 	if err := configuration.ReadConfiguration("config/identity/config", &conf); err != nil {
 		log.Fatal(err)
 	}
-	initLogger(conf.LogLevel)
+
+	if err := logging.SetLevel(l, conf.LogLevel); err != nil {
+		log.WithError(err).Fatal("Fail to start server")
+	}
 
 	log.Info("Starting Server...")
 	key, err := utils.ReadPrivateKeyFromFile(conf.PrivateKeyPath)
@@ -65,19 +68,4 @@ func main() {
 	if err := router.Run(":" + strconv.Itoa(conf.Server.Port)); err != nil {
 		log.WithError(err).Fatal("Fail to start server.")
 	}
-}
-
-func initLogger(loglevel string) {
-	lvl, err := log.ParseLevel(strings.ToLower(loglevel))
-	if err != nil {
-		log.Fatalf("Invalid log level: %s", loglevel)
-	}
-	log.SetFormatter(&log.TextFormatter{
-		TimestampFormat: "2006-01-02T15:04:05.000",
-		FullTimestamp:   true,
-	})
-
-	log.SetReportCaller(true)
-	log.SetLevel(lvl)
-	log.Infof("Log level: %s", loglevel)
 }
