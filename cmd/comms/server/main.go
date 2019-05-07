@@ -10,8 +10,7 @@ import (
 )
 
 type commServerConfig struct {
-	CoordinatorHost string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
-	CoordinatorPort int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+	CoordinatorURL  string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
 	Version         string `overwrite-flag:"version"`
 	LogLevel        string `overwrite-flag:"logLevel"`
 	NoopAuthEnabled bool   `overwrite-flag:"noopEnabled"`
@@ -35,7 +34,7 @@ func main() {
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
-		CoordinatorURL: fmt.Sprintf("ws://%s:%d/discover", conf.CoordinatorHost, conf.CoordinatorPort),
+		CoordinatorURL: fmt.Sprintf("%s/discover", conf.CoordinatorURL),
 		AuthMethod:     "noop",
 	}
 

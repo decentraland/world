@@ -1,3 +1,4 @@
 coordinatorHost: 'localhost'
 coordinatorPort: 9090
+coordinatorURL: "ws://localhost:9090"
 logLevel:        'info'
