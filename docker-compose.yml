@@ -1,0 +1,23 @@
+version: "2"
+services:
+  prometheus:
+    image: prom/prometheus:v2.9.2
+    volumes:
+     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
+    ports:
+     - "9091:9091"
+    depends_on:
+     - node-exporter
+
+  node-exporter:
+    image: prom/node-exporter:v0.17.0
+    ports:
+     - "9100:9100"
+
+  grafana:
+    image: grafana/grafana:6.1.6
+    ports:
+     - "3000:3000"
+    depends_on:
+      - prometheus

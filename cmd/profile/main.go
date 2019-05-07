@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"strconv"
+	"fmt"
 
 	"github.com/decentraland/world/internal/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
@@ -11,6 +11,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type profileConfig struct {
@@ -36,8 +38,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := setupAuthentication(router, &conf.Auth); err != nil {
-		log.Fatal(err)
+	authMiddleware, err := auth.NewAuthMiddleware(&conf.Auth)
+	if err != nil {
+		log.WithError(err).Fatal("error creating auth middleware")
+	}
+
+	if authMiddleware != nil {
+		router.Use(authMiddleware)
 	}
 
 	config := profile.Config{
@@ -49,18 +56,14 @@ func main() {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
 
-	if err := router.Run(":" + strconv.Itoa(conf.Port)); err != nil {
-		log.WithError(err).Fatal("Fail to start server.")
-	}
-}
+	prometheusHandler := promhttp.Handler()
 
-func setupAuthentication(r *gin.Engine, authConfig *auth.Configuration) error {
-	authMiddleware, err := auth.NewAuthMiddleware(authConfig)
-	if err != nil {
-		return err
+	router.GET("/metrics", func(c *gin.Context) {
+		prometheusHandler.ServeHTTP(c.Writer, c.Request)
+	})
+
+	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
+	if err := router.Run(addr); err != nil {
+		log.WithError(err).Fatal("Failed to start server.")
 	}
-	if authMiddleware != nil {
-		r.Use(authMiddleware)
-	}
-	return nil
 }

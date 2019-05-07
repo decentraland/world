@@ -50,9 +50,9 @@ func Register(config *Config, router gin.IRouter) error {
 
 	internalError := gin.H{"error": "Internal error, please retry later"}
 	profile.GET("", func(c *gin.Context) {
-		userId := c.GetString("userId")
+		userID := c.GetString("userId")
 
-		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userId)
+		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
 
 		var jsonProfile []byte
 		err := row.Scan(&jsonProfile)
@@ -96,7 +96,7 @@ func Register(config *Config, router gin.IRouter) error {
 	})
 
 	profile.POST("", func(c *gin.Context) {
-		userId := c.GetString("userId")
+		userID := c.GetString("userId")
 
 		data, err := c.GetRawData()
 		if err != nil {
@@ -134,7 +134,7 @@ func Register(config *Config, router gin.IRouter) error {
 INSERT INTO profiles (user_id, schema_version, profile) VALUES($1, $2, $3)
 ON CONFLICT (user_id)
 DO UPDATE SET schema_version = $2, profile = $3`,
-			userId, profile.SchemaVersion, data)
+			userID, profile.SchemaVersion, data)
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")

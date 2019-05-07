@@ -15,16 +15,16 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	AuthOff        = "off"
+	AuthThirdParty = "third-party"
+)
+
 type Configuration struct {
 	Mode        string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
 	AuthKeyPath string `overwrite-flag:"trusted-key" flag-usage:"path to the file containing the auth-service public key"`
 	RequestTTL  int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
 }
-
-const (
-	AuthOff        = "off"
-	AuthThirdParty = "third-party"
-)
 
 func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 	switch strings.ToLower(c.Mode) {
@@ -33,7 +33,7 @@ func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 	case AuthThirdParty:
 		k, err := utils.ReadPublicKeyFromFile(c.AuthKeyPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Cannot read public key from '%s': %v", c.AuthKeyPath, err)
 		}
 		return NewThirdPartyAuthMiddleware(k, c.RequestTTL)
 	default:
