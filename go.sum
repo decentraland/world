@@ -24,10 +24,10 @@ github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495/go.mod h1:J7Y8YcW2
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344 h1:sRDtWxHQK4IDgap3GLOuJWick5DSAcA8YR7mRXREQ7A=
-github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344/go.mod h1:gVCV2+LyQEtBdPGRBooQ3qoz4gmqc8QsiAfhYvfgpks=
 github.com/decentraland/auth-go v0.0.0-20190506171720-25115afad45b h1:FBuyuODohMzC0qDi2H7yrTkSlf8wyVNxR51Fx4X9Vak=
 github.com/decentraland/auth-go v0.0.0-20190506171720-25115afad45b/go.mod h1:BnhGuJGx6SBW/mW/GwnkZp+SYo8nZsLE7OmH+SSri90=
+github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344 h1:sRDtWxHQK4IDgap3GLOuJWick5DSAcA8YR7mRXREQ7A=
+github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344/go.mod h1:gVCV2+LyQEtBdPGRBooQ3qoz4gmqc8QsiAfhYvfgpks=
 github.com/deckarep/golang-set v1.7.1 h1:SCQV0S6gTtp6itiFrTqI+pfmJ4LN85S1YzhDf9rTHJQ=
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
@@ -38,6 +38,8 @@ github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 h1:t8FVkw33L+wilf2QiWkw0UV77qRpcH/JHPKGpKa2E8g=
 github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
+github.com/gin-gonic/contrib v0.0.0-20190408155029-b5986969cb50 h1:FTJYCoHvVmKViH/f+1t8O358KsGMYBgLV6S4lDueZw4=
+github.com/gin-gonic/contrib v0.0.0-20190408155029-b5986969cb50/go.mod h1:iqneQ2Df3omzIVTkIfn7c1acsVnMGiSLn4XF5Blh3Yg=
 github.com/gin-gonic/gin v1.3.0 h1:kCmZyPklC0gVdL728E6Aj20uYBJV93nj/TkwBTKhFbs=
 github.com/gin-gonic/gin v1.3.0/go.mod h1:7cKuhb5qV2ggCFctp2fJQ+ErvciLZrIeoOSOm6mUr7Y=
 github.com/go-playground/locales v0.12.1 h1:2FITxuFt/xuCNP1Acdhv62OzaCiviiE4kotfhkmOqEc=

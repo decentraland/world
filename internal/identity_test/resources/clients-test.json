@@ -1,0 +1,9 @@
+[
+  {
+    "domain" : "http://google.com",
+    "login_url" : "/login_callback",
+    "logout_url" : "/logout_callback",
+    "id" : "1",
+    "external_id" : "externalId"
+  }
+]
