@@ -13,6 +13,10 @@ jobs:
     steps:
       - checkout
 
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+
       - run:
           name: Build
           command: make build
@@ -35,6 +39,11 @@ jobs:
       - run:
           name: Run identity test
           command: make identityci
+
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
   build:
     docker:
