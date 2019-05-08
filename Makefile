@@ -22,4 +22,7 @@ tidy:
 compile-protocol:
 	cd pkg/protocol; ${PROTOC} --js_out=import_style=commonjs,binary:. --ts_out=. --go_out=. ./comms.proto
 
+test:
+	go test -v ./... -count=1
+
 .PHONY: build

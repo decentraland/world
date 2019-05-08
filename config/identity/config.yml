@@ -1,0 +1,19 @@
+auth0:
+  baseUrl:  'https://dcl-test.auth0.com'  # Set AUTH0_BASE_URL env variable to overwrite this value
+  domain:   'dcl-test.auth0.com'          # Set AUTH0_DOMAIN env variable to overwrite this value
+
+logLevel: 'DEBUG' # Set LOG_LEVEL env variable to overwrite this value
+
+server:
+  port: 9091              # Listening port. Set PORT env variable to overwrite this value
+  url: "http://localhost:9091/"  # Base service url without the last. Set URL env variable to overwrite this value
+
+jwtDuration: 60  # Duration in seconds of the json web token
+
+metrics:
+  appName: ''  # Set METRICS_APP_NAME env variable to overwrite this value
+  appKey:  ''  # Set METRICS_APP_KEY env variable to overwrite this value
+
+clientsDataPath: 'config/identity/enabledClients.json'
+
+privateKeyPath: "config/defaultKeys/demoPrivate.key" # Set PRIV_KEY_PATH env variable to overwrite this value. Path to the file containing the private key in pem format

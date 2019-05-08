@@ -10,9 +10,11 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
+	github.com/gin-gonic/contrib v0.0.0-20190408155029-b5986969cb50
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-playground/locales v0.12.1
 	github.com/go-playground/universal-translator v0.16.0
+	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.1
 	github.com/google/uuid v1.1.1
 	github.com/json-iterator/go v1.1.6 // indirect
