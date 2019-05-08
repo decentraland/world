@@ -61,11 +61,11 @@ func main() {
 		log.WithError(err).Fatal("Fail to initialize Client repository")
 	}
 
-	if err := api.InitApi(auth0, key, router, repo, conf.Server.URL, conf.JwtDuration); err != nil {
+	if err := api.InitApi(auth0, key, router, repo, conf.Server.PublicURL, conf.JwtDuration); err != nil {
 		log.WithError(err).Fatal("Fail to initialize routes")
 	}
 
-	web.SiteContent(router, repo, conf.Server.URL, conf.Auth0.Domain)
+	web.SiteContent(router, repo, conf.Server.PublicURL, conf.Auth0.Domain)
 
 	if err := router.Run(":" + strconv.Itoa(conf.Server.Port)); err != nil {
 		log.WithError(err).Fatal("Fail to start server.")

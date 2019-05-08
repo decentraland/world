@@ -21,9 +21,9 @@ const (
 )
 
 type Configuration struct {
-	Mode          string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
-	AuthServerUrl string `overwrite-flag:"auth-url" flag-usage:"path to the file containing the auth-service public key"`
-	RequestTTL    int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
+	Mode          string `overwrite-flag:"authMode" flag-usage:"off, third-party" validate:"required"`
+	AuthServerUrl string `overwrite-flag:"authUrl" flag-usage:"path to the file containing the auth-service public key"`
+	RequestTTL    int64  `overwrite-flag:"authTtl" flag-usage:"request time to live"`
 }
 
 func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
