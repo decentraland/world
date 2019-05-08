@@ -18,16 +18,17 @@ import (
 
 type identityConf struct {
 	Auth0           data.Auth0Config
-	LogLevel        string        `overwrite-env:"LOG_LEVEL"`
-	JwtDuration     time.Duration `overwrite-env:"JWT_DURATION"`
-	ClientsDataPath string        `overwrite-env:"CLIENTS_DATA_PATH"`
+	LogLevel        string `overwrite-flag:"logLevel"`
+	JwtDuration     time.Duration
+	ClientsDataPath string `overwrite-flag:"clientsDataPath"`
 	Server          Server
-	PrivateKeyPath  string `overwrite-env:"PRIV_KEY_PATH" validate:"required"`
+	PrivateKeyPath  string `overwrite-flag:"privateKeyPath" validate:"required"`
 }
 
 type Server struct {
-	Port int    `overwrite-env:"PORT" validate:"required"`
-	URL  string `overwrite-env:"URL" validate:"required"`
+	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+	PublicURL string `overwrite-flag:"publicUrl" validate:"required"`
 }
 
 func main() {
