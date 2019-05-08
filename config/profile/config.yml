@@ -6,4 +6,4 @@ schemaDir:  "pkg/profile" # Set -schemaDir flag to overwrite this value
 auth:
   mode:       "third-party" # Set auth-mode flag to overwrite this value
   requestTTL: 60            # Set auth-ttl flag to overwrite this value
-  authKeyPath: "config/defaultKeys/demoPublic.pem" # Set trusted-key flag to overwrite this value
+  authServerUrl: "http://localhost:9091/api/v1/public_key" # Set auth-url flag to overwrite this value

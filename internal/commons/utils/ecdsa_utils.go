@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
+	"net/http"
 )
 
 func PemEncodePublicKey(pubKey *ecdsa.PublicKey) (string, error) {
@@ -61,6 +62,22 @@ func ReadPublicKeyFromFile(path string) (*ecdsa.PublicKey, error) {
 		return nil, err
 	}
 	if k, err := PemDecodePublicKey(string(content)); err != nil {
+		return nil, err
+	} else {
+		return k, nil
+	}
+}
+
+func ReadRemotePublicKey(url string) (*ecdsa.PublicKey, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	key, err := ioutil.ReadAll(resp.Body)
+
+	if k, err := PemDecodePublicKey(string(key)); err != nil {
 		return nil, err
 	} else {
 		return k, nil
