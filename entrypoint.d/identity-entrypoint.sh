@@ -1,9 +1,6 @@
 #!/bin/bash
-FILE="config/enabledClients.json"
-
-echo "Overwriting the file ${FILE}"
-echo -e ${CONFIG_SERVICE_JSON} | sed 's/\\//g' > ${FILE}
-cat ${FILE}
+echo -e ${CONFIG_SERVICE_JSON} | sed 's/\\//g' > ${CLIENTS_DATA_PATH}
+cat ${CLIENTS_DATA_PATH}
 
 echo "Setting private key..."
 echo -e ${PRIV_KEY} | sed 's/\\//g' > ${PRIV_KEY_PATH}
