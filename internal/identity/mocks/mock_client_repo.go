@@ -5,9 +5,10 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	repository "github.com/decentraland/world/internal/identity/repository"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockClientRepository is a mock of ClientRepository interface

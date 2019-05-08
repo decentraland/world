@@ -3,10 +3,11 @@ package repository
 import (
 	"encoding/json"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"net/url"
 	"os"
 	"path"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ClientData struct {

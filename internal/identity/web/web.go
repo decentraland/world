@@ -2,11 +2,12 @@ package web
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 func SiteContent(router *gin.Engine, clientRepo repository.ClientRepository, serverUrl string, auth0Domain string) {

@@ -35,6 +35,10 @@ jobs:
           name: Run profile test
           command: make profileci PROFILE_TEST_DB_CONN_STR="postgres://testuser@localhost/testdb?sslmode=disable"
 
+      - run:
+          name: Run identity test
+          command: make identityci
+
       - setup_remote_docker: { docker_layer_caching: true }
 
       - run:

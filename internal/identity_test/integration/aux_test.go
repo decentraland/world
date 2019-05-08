@@ -5,9 +5,10 @@ import (
 	"crypto/elliptic"
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/decentraland/world/internal/identity/data"
 	"github.com/dgrijalva/jwt-go"
-	"math/big"
 )
 
 type U struct {

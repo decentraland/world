@@ -4,11 +4,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"github.com/decentraland/world/internal/commons/utils"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/decentraland/world/internal/commons/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {

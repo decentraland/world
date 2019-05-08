@@ -7,6 +7,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +30,37 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
+
+var validProfile = `{
+"id": "user1",
+"email": "test@test.com",
+"name": "testname",
+"description": "desc",
+"age": 98,
+"avatar": {
+	"version": "v1",
+	"id": "something",
+	"bodyShape": "cid-123123",
+	"skinColor": { "r": 0.1, "g": 1, "b": 0 },
+	"hairColor": { "r": 0.1, "g": 1, "b": 0 },
+	"eyeColor": { "r": 0.1, "g": 1, "b": 0 },
+	"eyes": "cid-12313",
+	"eyebrow": "cid-12313",
+	"mouth": "cid-12313",
+	"wearables": [
+		{
+			"contentId": "cid-123123",
+			"category": "torso",
+			"mappings": [
+				{
+					"name": "file.png",
+					"file": "cid-123213"
+				}
+			]
+		}
+	]
+}
+}`
 
 func prepareDb(t *testing.T) *sql.DB {
 	connStr := os.Getenv("PROFILE_TEST_DB_CONN_STR")
@@ -71,9 +103,9 @@ func getAddressFromKey(pk *ecdsa.PublicKey) string {
 	return hexutil.Encode(crypto.CompressPubkey(pk))
 }
 
-func generateAccessToken(serverKey *ecdsa.PrivateKey, ephKey string, duration time.Duration, userId string) (string, error) {
+func generateAccessToken(serverKey *ecdsa.PrivateKey, ephKey string, duration time.Duration, userID string) (string, error) {
 	claims := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"user_id":       userId,
+		"user_id":       userID,
 		"ephemeral_key": ephKey,
 		"version":       "1.0",
 		"exp":           time.Now().Add(time.Second * duration).Unix(),
@@ -128,7 +160,7 @@ func TestGetProfile(t *testing.T) {
 	t.Run("Profile returned", func(t *testing.T) {
 		_, err := db.Exec("DELETE FROM profiles")
 		require.NoError(t, err)
-		_, err = db.Exec(`INSERT INTO profiles VALUES ('user1', 1, '{"schemaVersion": 1, "bodyShape": "girl"}')`)
+		_, err = db.Exec(`INSERT INTO profiles VALUES ('user1', $1)`, validProfile)
 		require.NoError(t, err)
 
 		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user1")
@@ -143,21 +175,23 @@ func TestGetProfile(t *testing.T) {
 		router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
-		err = json.Unmarshal(w.Body.Bytes(), &response)
+		var profile map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &profile)
 		require.NoError(t, err)
 
-		require.Len(t, response, 2)
-		require.Contains(t, response, "schemaVersion")
-		require.Contains(t, response, "bodyShape")
-		require.Equal(t, response["schemaVersion"], 1.0)
-		require.Equal(t, response["bodyShape"], "girl")
+		require.Len(t, profile, 6)
+		require.Contains(t, profile, "id")
+		require.Contains(t, profile, "email")
+		require.Contains(t, profile, "name")
+		require.Contains(t, profile, "description")
+		require.Contains(t, profile, "age")
+		require.Contains(t, profile, "avatar")
 	})
 
 	t.Run("Invalid profile in db should return error", func(t *testing.T) {
 		_, err := db.Exec("DELETE FROM profiles")
 		require.NoError(t, err)
-		_, err = db.Exec(`INSERT INTO profiles VALUES ('user1', 1, '{"schemaVersion": 2, "bodyShape": "alien"}')`)
+		_, err = db.Exec(`INSERT INTO profiles VALUES ('user1', '{"schemaVersion": 2, "bodyShape": "alien"}')`)
 		require.NoError(t, err)
 
 		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user1")
@@ -208,17 +242,19 @@ func TestPostProfile(t *testing.T) {
 		_, err = db.Exec("DELETE FROM profiles")
 		require.NoError(t, err)
 
-		reader := strings.NewReader(`{"schemaVersion": 1, "bodyShape": "girl"}`)
+		reader := strings.NewReader(validProfile)
 		req, _ := http.NewRequest("POST", "/api/v1/profile", reader)
 		err = credential.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
+
+		fmt.Println(string(w.Body.Bytes()))
 		require.Equal(t, http.StatusNoContent, w.Code)
 
-		userId := "user1"
-		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userId)
+		userID := "user1"
+		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
 
 		var jsonProfile []byte
 		err = row.Scan(&jsonProfile)
@@ -228,10 +264,12 @@ func TestPostProfile(t *testing.T) {
 		err = json.Unmarshal(jsonProfile, &profile)
 		require.NoError(t, err)
 
-		require.Len(t, profile, 2)
-		require.Contains(t, profile, "schemaVersion")
-		require.Contains(t, profile, "bodyShape")
-		require.Equal(t, profile["schemaVersion"], 1.0)
-		require.Equal(t, profile["bodyShape"], "girl")
+		require.Len(t, profile, 6)
+		require.Contains(t, profile, "id")
+		require.Contains(t, profile, "email")
+		require.Contains(t, profile, "name")
+		require.Contains(t, profile, "description")
+		require.Contains(t, profile, "age")
+		require.Contains(t, profile, "avatar")
 	})
 }

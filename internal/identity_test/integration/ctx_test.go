@@ -7,15 +7,16 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/decentraland/world/internal/identity/api"
-	"github.com/decentraland/world/internal/identity/data"
-	"github.com/decentraland/world/internal/identity/mocks"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/decentraland/world/internal/identity/api"
+	"github.com/decentraland/world/internal/identity/data"
+	"github.com/decentraland/world/internal/identity/mocks"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -90,9 +91,9 @@ func NewContext(t *testing.T) *TestContext {
 	ctx.Controller = gomock.NewController(t)
 	ctx.T = t
 	ctx.Auth0 = mocks.NewMockIAuth0Service(ctx.Controller)
-	ctx.Key, _ =  ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	ctx.Key, _ = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	ctx.Router = gin.New()
-	if err := api.InitApi(ctx.Auth0, ctx.Key,ctx.Router, nil, "http://localhost:9091/", 60); err != nil {
+	if err := api.InitApi(ctx.Auth0, ctx.Key, ctx.Router, nil, "http://localhost:9091/", 60); err != nil {
 		t.Fatal("Fail to initialize routes")
 	}
 	return &ctx
