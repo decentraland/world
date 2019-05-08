@@ -16,4 +16,4 @@ metrics:
 
 clientsDataPath: 'config/identity/enabledClients.json'
 
-privateKeyPath: "config/defaultKeys/demoPrivate.key" # Set PRIV_KEY_PATH env variable to overwrite this value. Path to the file containing the private key in pem format
+privateKeyPath: "config/identity/defaultKeys/demoPrivate.key" # Set PRIV_KEY_PATH env variable to overwrite this value. Path to the file containing the private key in pem format

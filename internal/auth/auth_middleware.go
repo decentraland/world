@@ -21,9 +21,9 @@ const (
 )
 
 type Configuration struct {
-	Mode        string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
-	AuthKeyPath string `overwrite-flag:"trusted-key" flag-usage:"path to the file containing the auth-service public key"`
-	RequestTTL  int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
+	Mode          string `overwrite-flag:"auth-mode" flag-usage:"off, third-party" validate:"required"`
+	AuthServerUrl string `overwrite-flag:"auth-url" flag-usage:"path to the file containing the auth-service public key"`
+	RequestTTL    int64  `overwrite-flag:"auth-ttl" flag-usage:"request time to live"`
 }
 
 func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
@@ -31,9 +31,9 @@ func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 	case AuthOff:
 		return nil, nil
 	case AuthThirdParty:
-		k, err := utils.ReadPublicKeyFromFile(c.AuthKeyPath)
+		k, err := utils.ReadRemotePublicKey(c.AuthServerUrl)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot read public key from '%s': %v", c.AuthKeyPath, err)
+			return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerUrl, err)
 		}
 		return NewThirdPartyAuthMiddleware(k, c.RequestTTL)
 	default:

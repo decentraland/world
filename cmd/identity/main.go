@@ -22,7 +22,7 @@ type identityConf struct {
 	JwtDuration     time.Duration `overwrite-env:"JWT_DURATION"`
 	ClientsDataPath string        `overwrite-env:"CLIENTS_DATA_PATH"`
 	Server          Server
-	PrivateKeyPath  string `overwrite-env:"" validate:"required"`
+	PrivateKeyPath  string `overwrite-env:"PRIV_KEY_PATH" validate:"required"`
 }
 
 type Server struct {
