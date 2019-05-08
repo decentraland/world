@@ -16,4 +16,4 @@ else
      exit 1
 fi
 
-exec "$@"
+exec ./build/identity $@
