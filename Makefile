@@ -16,6 +16,9 @@ integration: build
 
 profileci: integration
 
+identityci:
+	go test -v ./... -count=1
+
 tidy:
 	go mod tidy
 

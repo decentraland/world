@@ -4,6 +4,11 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"path"
+	"time"
+
 	"github.com/decentraland/world/internal/commons/token"
 	"github.com/decentraland/world/internal/commons/utils"
 	"github.com/decentraland/world/internal/gindcl"
@@ -13,10 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v9"
-	"net/http"
-	"net/url"
-	"path"
-	"time"
 )
 
 type Application struct {

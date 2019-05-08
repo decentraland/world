@@ -5,9 +5,10 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	data "github.com/decentraland/world/internal/identity/data"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockIAuth0Service is a mock of IAuth0Service interface

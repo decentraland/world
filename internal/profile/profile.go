@@ -10,32 +10,32 @@ import (
 
 	"github.com/decentraland/world/internal/auth"
 
-	definitions "github.com/decentraland/world/pkg/profile"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
 )
 
-type ProfileV1 = definitions.ProfileV1
-
+// Services represents profile service dependencies
 type Services struct {
 	Log *logrus.Logger
 	Db  *sql.DB
 }
 
+// Config represents profile service config
 type Config struct {
 	SchemaDir string
 	Services  Services
 }
 
+// Register register api routes
 func Register(config *Config, router gin.IRouter) error {
 	services := config.Services
 	log := services.Log
 	db := services.Db
 
 	sl := gojsonschema.NewSchemaLoader()
-	path := path.Join(config.SchemaDir, "v1-profile.json")
-	schemaLoader := gojsonschema.NewReferenceLoader(fmt.Sprintf("file://%s", path))
+	profileSchemaPath := path.Join(config.SchemaDir, "v1-profile.json")
+	schemaLoader := gojsonschema.NewReferenceLoader(fmt.Sprintf("file://%s", profileSchemaPath))
 	schema, err := sl.Compile(schemaLoader)
 	if err != nil {
 		log.WithError(err).Error("error loading schema")
@@ -67,7 +67,9 @@ func Register(config *Config, router gin.IRouter) error {
 			return
 		}
 
-		var profile ProfileV1
+		profile := make(map[string]interface{})
+
+		// var profile definitions.Profile
 		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
 			c.JSON(http.StatusInternalServerError, internalError)
@@ -123,18 +125,11 @@ func Register(config *Config, router gin.IRouter) error {
 			return
 		}
 
-		var profile ProfileV1
-		if err := json.Unmarshal(data, &profile); err != nil {
-			log.WithError(err).Error("json unmarshalling failed")
-			c.JSON(http.StatusInternalServerError, internalError)
-			return
-		}
-
 		_, err = db.Exec(`
-INSERT INTO profiles (user_id, schema_version, profile) VALUES($1, $2, $3)
+INSERT INTO profiles (user_id, profile) VALUES($1, $2)
 ON CONFLICT (user_id)
-DO UPDATE SET schema_version = $2, profile = $3`,
-			userID, profile.SchemaVersion, data)
+DO UPDATE SET profile = $2`,
+			userID, data)
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")

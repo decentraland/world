@@ -1,6 +1,9 @@
 package main
 
 import (
+	"strconv"
+	"time"
+
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
 	"github.com/decentraland/world/internal/commons/utils"
@@ -10,9 +13,7 @@ import (
 	"github.com/decentraland/world/internal/identity/web"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"github.com/toorop/gin-logrus"
-	"strconv"
-	"time"
+	ginlogrus "github.com/toorop/gin-logrus"
 )
 
 type identityConf struct {
@@ -21,7 +22,7 @@ type identityConf struct {
 	JwtDuration     time.Duration `overwrite-env:"JWT_DURATION"`
 	ClientsDataPath string        `overwrite-env:"CLIENTS_DATA_PATH"`
 	Server          Server
-	PrivateKeyPath     string `overwrite-env:"" validate:"required"`
+	PrivateKeyPath  string `overwrite-env:"" validate:"required"`
 }
 
 type Server struct {
