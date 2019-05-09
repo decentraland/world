@@ -22,31 +22,31 @@ const (
 
 type Configuration struct {
 	Mode          string `overwrite-flag:"authMode" flag-usage:"off, third-party" validate:"required"`
-	AuthServerUrl string `overwrite-flag:"authUrl" flag-usage:"path to the file containing the auth-service public key"`
+	AuthServerURL string `overwrite-flag:"authURL" flag-usage:"path to the file containing the auth-service public key"`
 	RequestTTL    int64  `overwrite-flag:"authTtl" flag-usage:"request time to live"`
 }
 
-func NewAuthMiddleware(c *Configuration, publicUrl string) (func(ctx *gin.Context), error) {
+func NewAuthMiddleware(c *Configuration, publicURL string) (func(ctx *gin.Context), error) {
 	switch strings.ToLower(c.Mode) {
 	case AuthOff:
 		return nil, nil
 	case AuthThirdParty:
-		k, err := utils.ReadRemotePublicKey(c.AuthServerUrl)
+		k, err := utils.ReadRemotePublicKey(c.AuthServerURL)
 		if err != nil {
-			return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerUrl, err)
+			return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerURL, err)
 		}
-		return NewThirdPartyAuthMiddleware(k, c.RequestTTL, publicUrl)
+		return NewThirdPartyAuthMiddleware(k, c.RequestTTL, publicURL)
 	default:
 		return nil, fmt.Errorf("undefined authentication mode: %s", c.Mode)
 	}
 }
 
-func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64, publicUrl string) (func(ctx *gin.Context), error) {
+func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64, publicURL string) (func(ctx *gin.Context), error) {
 	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: reqTtl, TrustedKey: pubKey}
 	authHandler := auth2.NewAuthProvider(authnStrategy, &authorization.AllowAllStrategy{})
 
 	return func(ctx *gin.Context) {
-		req, err := auth2.MakeFromHttpRequest(ctx.Request, publicUrl)
+		req, err := auth2.MakeFromHttpRequest(ctx.Request, publicURL)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
 			return

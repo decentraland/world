@@ -20,7 +20,7 @@ type profileConfig struct {
 	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 	ConnStr   string `overwrite-flag:"connStr"   flag-usage:"psql connection string" validate:"required"`
 	SchemaDir string `overwrite-flag:"schemaDir" flag-usage:"path to the directory containing json schema files" validate:"required"`
-	PublicUrl string `overwrite-flag:"publicUrl" flag-usage:"Example: http://yourDomain.com" validate:"required"`
+	PublicURL string `overwrite-flag:"publicURL" flag-usage:"Example: http://yourDomain.com" validate:"required"`
 	Auth      auth.Configuration
 }
 
@@ -39,7 +39,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	authMiddleware, err := auth.NewAuthMiddleware(&conf.Auth, conf.PublicUrl)
+	authMiddleware, err := auth.NewAuthMiddleware(&conf.Auth, conf.PublicURL)
 	if err != nil {
 		log.WithError(err).Fatal("error creating auth middleware")
 	}

@@ -25,7 +25,7 @@ type Application struct {
 	redirectURL      string
 	generator        *token.Generator // Signs jwt, maybe should update name?s
 	pubkey           string
-	serverUrl        string
+	serverURL        string
 	clientRepository repository.ClientRepository
 	validator        *validator.Validate
 }
@@ -37,16 +37,16 @@ type TokenRequest struct {
 
 type AuthRequest struct {
 	Domain    string `json:"domain" validate:"required"`
-	LoginUrl  string `json:"login_callback" validate:"required"`
-	LogoutUrl string `json:"logout_callback" validate:"required"`
+	LoginURL  string `json:"login_callback" validate:"required"`
+	LogoutURL string `json:"logout_callback" validate:"required"`
 }
 
 type AuthResponse struct {
-	LoginUrl  string `json:"login_url"`
-	LogoutUrl string `json:"logout_url"`
+	LoginURL  string `json:"login_url"`
+	LogoutURL string `json:"logout_url"`
 }
 
-func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin.Engine, clientRepository repository.ClientRepository, serverUrl string, jwtDuration time.Duration) error {
+func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin.Engine, clientRepository repository.ClientRepository, serverURL string, jwtDuration time.Duration) error {
 	generator := token.New(key, "1.0", jwtDuration)
 
 	publicKey, err := utils.PemEncodePublicKey(&key.PublicKey)
@@ -56,7 +56,7 @@ func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin
 
 	router.Use(gindcl.CorsMiddleware())
 
-	app := &Application{auth0: auth0Service, generator: generator, pubkey: publicKey, clientRepository: clientRepository, serverUrl: serverUrl, validator: validator.New()}
+	app := &Application{auth0: auth0Service, generator: generator, pubkey: publicKey, clientRepository: clientRepository, serverURL: serverURL, validator: validator.New()}
 
 	api := router.Group("/api")
 
@@ -96,7 +96,7 @@ func (a *Application) authData(c *gin.Context) {
 		return
 	}
 
-	response, err := getAuthData(a.clientRepository, req, a.serverUrl)
+	response, err := getAuthData(a.clientRepository, req, a.serverURL)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -147,20 +147,20 @@ func buildUrl(basePath string, relPath string, args ...interface{}) string {
 	return urlResult
 }
 
-func getAuthData(clientRepository repository.ClientRepository, req AuthRequest, serverUrl string) (*AuthResponse, error) {
+func getAuthData(clientRepository repository.ClientRepository, req AuthRequest, serverURL string) (*AuthResponse, error) {
 	client, err := clientRepository.GetByDomain(req.Domain)
 	if err != nil {
 		log.WithError(err).Error("Error retrieving client data by domain")
 		return nil, err
 	}
 
-	if client.LogoutUrl != req.LogoutUrl || client.LoginUrl != req.LoginUrl {
+	if client.LogoutURL != req.LogoutURL || client.LoginURL != req.LoginURL {
 		log.Error("Provided data do no match")
 		return nil, errors.New("provided data do no match")
 	}
 
 	return &AuthResponse{
-		LoginUrl:  buildUrl(serverUrl, "/login/%s", client.Id),
-		LogoutUrl: buildUrl(serverUrl, "/logout/%s", client.Id),
+		LoginURL:  buildUrl(serverURL, "/login/%s", client.Id),
+		LogoutURL: buildUrl(serverURL, "/logout/%s", client.Id),
 	}, nil
 }

@@ -10,13 +10,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func SiteContent(router *gin.Engine, clientRepo repository.ClientRepository, serverUrl string, auth0Domain string) {
+func SiteContent(router *gin.Engine, clientRepo repository.ClientRepository, serverURL string, auth0Domain string) {
 	router.Use(static.Serve("/public", static.LocalFile("internal/identity/web/static/", true)))
 	router.LoadHTMLGlob("internal/identity/web/templates/*")
 
 	app := &application{
 		clientRepo:  clientRepo,
-		serverUrl:   serverUrl,
+		serverURL:   serverURL,
 		authODomain: auth0Domain,
 	}
 
@@ -30,7 +30,7 @@ func SiteContent(router *gin.Engine, clientRepo repository.ClientRepository, ser
 
 type application struct {
 	clientRepo  repository.ClientRepository
-	serverUrl   string
+	serverURL   string
 	authODomain string
 }
 
@@ -43,10 +43,10 @@ func (app *application) login(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		callbackUrl := fmt.Sprintf("%slogin_callback?clientId=%s", app.serverUrl, clientId)
+		callbackURL := fmt.Sprintf("%slogin_callback?clientId=%s", app.serverURL, clientId)
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "login.html", gin.H{
-			"callbackUrl": callbackUrl,
+			"callbackUrl": callbackURL,
 			"domain":      app.authODomain,
 			"externalId":  client.ExternalID,
 		})
@@ -72,13 +72,13 @@ func (app *application) loginCallback(c *gin.Context) {
 			"message": err.Error()})
 	} else {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
-		callbackUrl := fmt.Sprintf("%s?clientId=%s", app.serverUrl, clientId)
+		callbackURL := fmt.Sprintf("%s?clientId=%s", app.serverURL, clientId)
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "loginCallback.html", gin.H{
-			"callbackUrl": callbackUrl,
+			"callbackUrl": callbackURL,
 			"authDomain":  app.authODomain,
 			"externalId":  client.ExternalID,
-			"redirectUrl": client.GetFullLoginUrl(),
+			"redirectUrl": client.GetFullLoginURL(),
 			"appDomain":   client.Domain,
 		})
 	}
@@ -94,10 +94,10 @@ func (app *application) logout(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		callbackUrl := fmt.Sprintf("%slogout_callback?clientId=%s", app.serverUrl, clientId)
+		callbackURL := fmt.Sprintf("%slogout_callback?clientId=%s", app.serverURL, clientId)
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "logout.html", gin.H{
-			"callbackUrl": callbackUrl,
+			"callbackUrl": callbackURL,
 			"domain":      app.authODomain,
 			"externalId":  client.ExternalID,
 		})
@@ -124,7 +124,7 @@ func (app *application) logoutCallback(c *gin.Context) {
 	} else {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "logoutCallback.html", gin.H{
-			"redirectUrl": client.GetFullLogoutUrl(),
+			"redirectUrl": client.GetFullLogoutURL(),
 		})
 	}
 }

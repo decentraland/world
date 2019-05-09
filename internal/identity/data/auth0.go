@@ -14,8 +14,8 @@ const (
 )
 
 type Auth0Config struct {
-	BaseUrl string `overwrite-env:"AUTH0_BASE_URL"`
-	Domain  string `overwrite-env:"AUTH0_DOMAIN"`
+	BaseURL string `overwrite-flag:"auth0BaseURL"`
+	Domain  string `overwrite-flag:"auth0Domain"`
 }
 
 type User struct {
@@ -28,12 +28,12 @@ type IAuth0Service interface {
 }
 
 type Auth0Service struct {
-	baseUrl        *url.URL
-	getUserInfoUrl string
+	baseURL        *url.URL
+	getUserInfoURL string
 }
 
 func MakeAuth0Service(config Auth0Config) (IAuth0Service, error) {
-	u, err := url.Parse(config.BaseUrl)
+	u, err := url.Parse(config.BaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,8 @@ func MakeAuth0Service(config Auth0Config) (IAuth0Service, error) {
 	}
 
 	s := &Auth0Service{
-		baseUrl:        u,
-		getUserInfoUrl: u.ResolveReference(getUserInfoRel).String(),
+		baseURL:        u,
+		getUserInfoURL: u.ResolveReference(getUserInfoRel).String(),
 	}
 
 	return s, nil
@@ -72,7 +72,7 @@ type GetUserInfoResponse struct {
 func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	user := User{}
 
-	res, err := s.getWithAuth(s.getUserInfoUrl, accessToken)
+	res, err := s.getWithAuth(s.getUserInfoURL, accessToken)
 	if err != nil {
 		return user, err
 	}

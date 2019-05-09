@@ -11,19 +11,19 @@ import (
 )
 
 type ClientData struct {
-	LoginUrl   string `json:"login_url"`
-	LogoutUrl  string `json:"logout_url"`
+	LoginURL   string `json:"login_url"`
+	LogoutURL  string `json:"logout_url"`
 	Domain     string `json:"domain"`
 	Id         string `json:"id"`
 	ExternalID string `json:"external_id"`
 }
 
-func (cd *ClientData) GetFullLoginUrl() string {
-	return cd.buildUrl(cd.LoginUrl)
+func (cd *ClientData) GetFullLoginURL() string {
+	return cd.buildUrl(cd.LoginURL)
 }
 
-func (cd *ClientData) GetFullLogoutUrl() string {
-	return cd.buildUrl(cd.LogoutUrl)
+func (cd *ClientData) GetFullLogoutURL() string {
+	return cd.buildUrl(cd.LogoutURL)
 }
 
 func (cd *ClientData) buildUrl(relPath string) string {

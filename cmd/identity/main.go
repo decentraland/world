@@ -28,7 +28,7 @@ type identityConf struct {
 type Server struct {
 	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
-	PublicURL string `overwrite-flag:"publicUrl" validate:"required"`
+	PublicURL string `overwrite-flag:"publicURL" validate:"required"`
 }
 
 func main() {
