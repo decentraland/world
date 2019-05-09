@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/decentraland/world/internal/gindcl"
 
 	"github.com/decentraland/world/internal/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
@@ -38,6 +39,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	router.Use(gindcl.CorsMiddleware())
 
 	authMiddleware, err := auth.NewAuthMiddleware(&conf.Auth, conf.PublicURL)
 	if err != nil {

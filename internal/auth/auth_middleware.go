@@ -44,30 +44,33 @@ func NewAuthMiddleware(c *Configuration, publicURL string) (func(ctx *gin.Contex
 func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64, publicURL string) (func(ctx *gin.Context), error) {
 	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: reqTtl, TrustedKey: pubKey}
 	authHandler := auth2.NewAuthProvider(authnStrategy, &authorization.AllowAllStrategy{})
-
 	return func(ctx *gin.Context) {
-		req, err := auth2.MakeFromHttpRequest(ctx.Request, publicURL)
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
-			return
-		}
-		ok, err := authHandler.ApproveRequest(req)
-		if err != nil {
-			switch err := err.(type) {
-			case auth2.AuthenticationError:
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			case auth2.AuthorizationError:
-				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-			default:
-				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if ctx.Request.Method == http.MethodOptions {
+			ctx.Next()
+		} else {
+			req, err := auth2.MakeFromHttpRequest(ctx.Request, publicURL)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
+				return
 			}
-			return
+			ok, err := authHandler.ApproveRequest(req)
+			if err != nil {
+				switch err := err.(type) {
+				case auth2.AuthenticationError:
+					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+				case auth2.AuthorizationError:
+					ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+				default:
+					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				}
+				return
+			}
+			if !ok {
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
+				return
+			}
+			ctx.Next()
 		}
-		if !ok {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
-			return
-		}
-		ctx.Next()
 	}, nil
 }
 

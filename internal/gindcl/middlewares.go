@@ -15,8 +15,8 @@ func CorsMiddleware() gin.HandlerFunc {
 
 func PrefligthChecksMiddleware(allowedMethods string, allowedHeaders string) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Methods", allowedMethods)
-		c.Header("Access-Control-Allow-Headers", allowedHeaders)
+		c.Writer.Header().Set("Access-Control-Allow-Methods", allowedMethods)
+		c.Writer.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
 		c.AbortWithStatus(http.StatusNoContent)
 	}
 }

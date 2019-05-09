@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/gindcl"
 	"net/http"
 	"path"
 	"strings"
@@ -139,6 +140,9 @@ DO UPDATE SET profile = $2`,
 
 		c.JSON(http.StatusNoContent, gin.H{})
 	})
+
+
+	v1.OPTIONS("/profile", gindcl.PrefligthChecksMiddleware("POST, GET", "*"))
 
 	return nil
 }
