@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
@@ -36,12 +37,17 @@ func PemEncodePrivateKey(pvKey *ecdsa.PrivateKey) (string, error) {
 
 func PemDecodePrivateKey(pvKey string) (*ecdsa.PrivateKey, error) {
 	decoded, _ := pem.Decode([]byte(pvKey))
-	keyBytes := decoded.Bytes
-	if privateKey, err := x509.ParseECPrivateKey(keyBytes); err != nil {
-		return nil, err
-	} else {
-		return privateKey, nil
+	if decoded == nil {
+		return nil, errors.New("cannot decode pem private key")
 	}
+	keyBytes := decoded.Bytes
+
+	privateKey, err := x509.ParseECPrivateKey(keyBytes);
+	if err != nil {
+		return nil, err
+	}
+
+	return privateKey, nil
 }
 
 func ReadPrivateKeyFromFile(path string) (*ecdsa.PrivateKey, error) {
