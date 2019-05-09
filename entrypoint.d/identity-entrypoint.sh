@@ -6,7 +6,7 @@ cat ${CLIENTS_DATA_PATH}
 echo "...Done"
 
 echo "Setting private key..."
-echo -e ${PRIV_KEY} | sed 's/\\//g' > ${PRIV_KEY_PATH}
+echo -e ${PRIV_KEY} | base64 --decode > ${PRIV_KEY_PATH}
 cat ${PRIV_KEY_PATH}
 
 if [ -s ${PRIV_KEY_PATH} ]
