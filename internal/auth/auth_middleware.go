@@ -26,7 +26,7 @@ type Configuration struct {
 	RequestTTL    int64  `overwrite-flag:"authTtl" flag-usage:"request time to live"`
 }
 
-func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
+func NewAuthMiddleware(c *Configuration, publicUrl string) (func(ctx *gin.Context), error) {
 	switch strings.ToLower(c.Mode) {
 	case AuthOff:
 		return nil, nil
@@ -35,18 +35,18 @@ func NewAuthMiddleware(c *Configuration) (func(ctx *gin.Context), error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerUrl, err)
 		}
-		return NewThirdPartyAuthMiddleware(k, c.RequestTTL)
+		return NewThirdPartyAuthMiddleware(k, c.RequestTTL, publicUrl)
 	default:
 		return nil, fmt.Errorf("undefined authentication mode: %s", c.Mode)
 	}
 }
 
-func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64) (func(ctx *gin.Context), error) {
+func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64, publicUrl string) (func(ctx *gin.Context), error) {
 	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: reqTtl, TrustedKey: pubKey}
 	authHandler := auth2.NewAuthProvider(authnStrategy, &authorization.AllowAllStrategy{})
 
 	return func(ctx *gin.Context) {
-		req, err := auth2.MakeFromHttpRequest(ctx.Request)
+		req, err := auth2.MakeFromHttpRequest(ctx.Request, publicUrl)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
 			return

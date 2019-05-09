@@ -2,8 +2,9 @@ host:       'localhost'   # Set -host flag to overwrite this value
 port:       9002          # Set -port flag to overwrite this value
 connStr:    ""            # Set -connStr flag to overwrite this value
 schemaDir:  "pkg/profile" # Set -schemaDir flag to overwrite this value
+publicUrl:  "http://localhost:9002" # Set -schemaDir flag to overwrite this value
 
 auth:
-  mode:       "third-party" # Set auth-mode flag to overwrite this value
-  requestTTL: 60            # Set auth-ttl flag to overwrite this value
-  authServerUrl: "http://localhost:9001/api/v1/public_key" # Set auth-url flag to overwrite this value
+  mode:       "third-party" # Set authMode flag to overwrite this value
+  requestTTL: 60            # Set authTtl flag to overwrite this value
+  authServerUrl: "http://localhost:9001/api/v1/public_key" # Set authUrl flag to overwrite this value

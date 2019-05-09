@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
-	github.com/decentraland/auth-go v0.0.0-20190506171720-25115afad45b
+	github.com/decentraland/auth-go v0.0.0-20190509141648-516b4ab3d379
 	github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
@@ -30,6 +30,7 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/toorop/gin-logrus v0.0.0-20190324082946-8887861896bb
+	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0

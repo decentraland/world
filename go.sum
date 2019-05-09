@@ -26,8 +26,8 @@ github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495/go.mod h1:J7Y8YcW2
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/decentraland/auth-go v0.0.0-20190506171720-25115afad45b h1:FBuyuODohMzC0qDi2H7yrTkSlf8wyVNxR51Fx4X9Vak=
-github.com/decentraland/auth-go v0.0.0-20190506171720-25115afad45b/go.mod h1:BnhGuJGx6SBW/mW/GwnkZp+SYo8nZsLE7OmH+SSri90=
+github.com/decentraland/auth-go v0.0.0-20190509141648-516b4ab3d379 h1:vWUTudMzJ23l5iSAEejerz942j42Wk5xvXqZhFlHIZ4=
+github.com/decentraland/auth-go v0.0.0-20190509141648-516b4ab3d379/go.mod h1:BnhGuJGx6SBW/mW/GwnkZp+SYo8nZsLE7OmH+SSri90=
 github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344 h1:sRDtWxHQK4IDgap3GLOuJWick5DSAcA8YR7mRXREQ7A=
 github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344/go.mod h1:gVCV2+LyQEtBdPGRBooQ3qoz4gmqc8QsiAfhYvfgpks=
 github.com/deckarep/golang-set v1.7.1 h1:SCQV0S6gTtp6itiFrTqI+pfmJ4LN85S1YzhDf9rTHJQ=
@@ -177,6 +177,8 @@ github.com/toorop/gin-logrus v0.0.0-20190324082946-8887861896bb h1:tafzp7Ps8UI91
 github.com/toorop/gin-logrus v0.0.0-20190324082946-8887861896bb/go.mod h1:X3Dd1SB8Gt1V968NTzpKFjMM6O8ccta2NPC6MprOxZQ=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 h1:3SVOIvH7Ae1KRYyQWRjXWJEA9sS/c/pjvH++55Gr648=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
+github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 h1:EICbibRW4JNKMcY+LsWmuwob+CRS1BmdRdjphAm9mH4=
+github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f h1:J9EGpcZtP0E/raorCMxlFGSTBrsSlaDGf3jU/qvAE2c=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 h1:EzJWgHovont7NscjpAxXsDA8S8BMYve8Y5+7cuRE7R0=
