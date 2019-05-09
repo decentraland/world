@@ -44,8 +44,8 @@ func TestClientRepoImpl_GetById(t *testing.T) {
 
 func checkExpectedClient(t *testing.T, client *ClientData) {
 	assert.Equal(t, expectedDomain, client.Domain)
-	assert.Equal(t, "/login_callback", client.LoginUrl)
-	assert.Equal(t, "/logout_callback", client.LogoutUrl)
+	assert.Equal(t, "/login_callback", client.LoginURL)
+	assert.Equal(t, "/logout_callback", client.LogoutURL)
 	assert.Equal(t, "externalId", client.ExternalID)
 	assert.Equal(t, expectedId, client.Id)
 }

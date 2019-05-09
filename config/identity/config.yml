@@ -1,5 +1,5 @@
 auth0:
-  baseUrl:  'https://dcl-test.auth0.com'  # Set AUTH0_BASE_URL env variable to overwrite this value
+  baseURL:  'https://dcl-test.auth0.com'  # Set AUTH0_BASE_URL env variable to overwrite this value
   domain:   'dcl-test.auth0.com'          # Set AUTH0_DOMAIN env variable to overwrite this value
 
 logLevel: 'DEBUG' # Set LOG_LEVEL env variable to overwrite this value

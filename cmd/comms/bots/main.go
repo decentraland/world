@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	addr := flag.String("worldUrl", "ws://localhost:9090/connect", "")
+	addr := flag.String("worldURL", "ws://localhost:9090/connect", "")
 	centerXP := flag.Int("centerX", 0, "")
 	centerYP := flag.Int("centerY", 0, "")
 	radiusP := flag.Int("radius", 3, "radius (in parcels) from the center")
