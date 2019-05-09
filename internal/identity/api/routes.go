@@ -76,7 +76,6 @@ func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin
 }
 
 func (a *Application) status(c *gin.Context) {
-
 	c.String(http.StatusOK, "available")
 }
 

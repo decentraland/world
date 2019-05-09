@@ -1,7 +1,7 @@
 package main
 
 import (
-	"strconv"
+	"fmt"
 	"time"
 
 	configuration "github.com/decentraland/world/internal/commons/config"
@@ -67,7 +67,8 @@ func main() {
 
 	web.SiteContent(router, repo, conf.Server.PublicURL, conf.Auth0.Domain)
 
-	if err := router.Run(":" + strconv.Itoa(conf.Server.Port)); err != nil {
+	addr := fmt.Sprintf("%s:%d", conf.Server.Host, conf.Server.Port)
+	if err := router.Run(addr); err != nil {
 		log.WithError(err).Fatal("Fail to start server.")
 	}
 }
