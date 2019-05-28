@@ -2,20 +2,24 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
+	"github.com/decentraland/world/internal/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+type authConfiguration struct {
+	ServerSecret string `overwrite-flag:"serverSecret"`
+	AuthURL      string `overwrite-flag:"authURL" flag-usage:"identity service public key url"`
+	RequestTTL   int64  `overwrite-flag:"authTtl" flag-usage:"request time to live"`
+}
+
 type commServerConfig struct {
-	CoordinatorURL  string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
-	Version         string `overwrite-flag:"version"`
-	LogLevel        string `overwrite-flag:"logLevel"`
-	NoopAuthEnabled bool   `overwrite-flag:"noopEnabled"`
+	CoordinatorURL string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
+	Version        string `overwrite-flag:"version"`
+	LogLevel       string `overwrite-flag:"logLevel"`
+	Auth           authConfiguration
 }
 
 func main() {
@@ -27,9 +31,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	auth := authentication.Make()
+	serverAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
+		Secret:     conf.Auth.ServerSecret,
+		AuthURL:    conf.Auth.AuthURL,
+		RequestTTL: conf.Auth.RequestTTL,
+	})
+
+	if err != nil {
+		log.WithError(err).Fatal("cannot build authenticator")
+	}
+
 	config := commserver.Config{
-		Auth: auth,
+		Auth: serverAuth,
 		Log:  log,
 		ICEServers: []commserver.ICEServer{
 			{
@@ -37,15 +50,10 @@ func main() {
 			},
 		},
 		CoordinatorURL: fmt.Sprintf("%s/discover", conf.CoordinatorURL),
-		AuthMethod:     "noop",
 	}
 
 	if err := logging.SetLevel(log, conf.LogLevel); err != nil {
 		log.Fatal("error setting log level")
-	}
-
-	if conf.NoopAuthEnabled {
-		auth.AddOrUpdateAuthenticator("noop", &authentication.NoopAuthenticator{})
 	}
 
 	state, err := commserver.MakeState(&config)
@@ -58,11 +66,6 @@ func main() {
 	if err := commserver.ConnectCoordinator(state); err != nil {
 		log.Fatal("connect coordinator failure ", err)
 	}
-
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":2112", nil)
-	}()
 
 	go commserver.ProcessMessagesQueue(state)
 	commserver.Process(state)

@@ -118,9 +118,10 @@ func TestGetProfile(t *testing.T) {
 	serverKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
-	credential, err := ephemeral.GenerateSimpleCredential(36000)
+	config := ephemeral.EphemeralKeyConfig{}
+	ephemeralKey, err := ephemeral.NewEphemeralKey(&config)
 	require.NoError(t, err)
-	addr := getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey)
+	addr := getAddressFromKey(ephemeralKey.PublicKey())
 
 	db := prepareDb(t)
 	router := prepareEngine(t, db, serverKey)
@@ -132,7 +133,7 @@ func TestGetProfile(t *testing.T) {
 
 		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
-		err = credential.AddRequestHeaders(req, accessToken)
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
@@ -149,7 +150,7 @@ func TestGetProfile(t *testing.T) {
 
 		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
-		err = credential.AddRequestHeaders(req, accessToken)
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
@@ -168,7 +169,7 @@ func TestGetProfile(t *testing.T) {
 
 		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
-		err = credential.AddRequestHeaders(req, accessToken)
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
@@ -199,7 +200,7 @@ func TestGetProfile(t *testing.T) {
 
 		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
 
-		err = credential.AddRequestHeaders(req, accessToken)
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
@@ -212,9 +213,10 @@ func TestPostProfile(t *testing.T) {
 	serverKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
-	credential, err := ephemeral.GenerateSimpleCredential(36000)
+	config := ephemeral.EphemeralKeyConfig{}
+	ephemeralKey, err := ephemeral.NewEphemeralKey(&config)
 	require.NoError(t, err)
-	addr := getAddressFromKey(&credential.EphemeralPrivateKey.PublicKey)
+	addr := getAddressFromKey(ephemeralKey.PublicKey())
 
 	db := prepareDb(t)
 	router := prepareEngine(t, db, serverKey)
@@ -227,7 +229,7 @@ func TestPostProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		req, _ := http.NewRequest("POST", "/api/v1/profile", strings.NewReader(`{"bodyShape": "alien"}`))
-		err = credential.AddRequestHeaders(req, accessToken)
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
@@ -244,7 +246,7 @@ func TestPostProfile(t *testing.T) {
 
 		reader := strings.NewReader(validProfile)
 		req, _ := http.NewRequest("POST", "/api/v1/profile", reader)
-		err = credential.AddRequestHeaders(req, accessToken)
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()

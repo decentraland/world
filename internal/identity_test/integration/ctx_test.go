@@ -81,7 +81,6 @@ func RunTest(ctx *TestContext, test *TestCase) bool {
 }
 
 func NewContext(t *testing.T) *TestContext {
-
 	// disable logging
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = ioutil.Discard
@@ -93,7 +92,16 @@ func NewContext(t *testing.T) *TestContext {
 	ctx.Auth0 = mocks.NewMockIAuth0Service(ctx.Controller)
 	ctx.Key, _ = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	ctx.Router = gin.New()
-	if err := api.InitApi(ctx.Auth0, ctx.Key, ctx.Router, nil, "http://localhost:9091/", 60); err != nil {
+
+	config := api.Config{
+		Auth0Service:     ctx.Auth0,
+		Key:              ctx.Key,
+		ClientRepository: nil,
+		ServerURL:        "http://localhost:9091/",
+		JWTDuration:      60,
+	}
+
+	if err := api.InitApi(ctx.Router, &config); err != nil {
 		t.Fatal("Fail to initialize routes")
 	}
 	return &ctx
@@ -107,7 +115,14 @@ func SetupMocks(ctx *TestContext) {
 
 func TimeTravel(ctx *TestContext) bool {
 	ctx.Router = gin.New()
-	api.InitApi(ctx.Auth0, ctx.Key, ctx.Router, nil, "\"http://localhost:9091/", time.Duration(-1))
+	config := api.Config{
+		Auth0Service:     ctx.Auth0,
+		Key:              ctx.Key,
+		ClientRepository: nil,
+		ServerURL:        "http://localhost:9091/",
+		JWTDuration:      time.Duration(-1),
+	}
+	api.InitApi(ctx.Router, &config)
 	return true
 }
 

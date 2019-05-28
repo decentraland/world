@@ -1,20 +1,22 @@
 PROTOC ?= protoc
-PROFILE_TEST_DB_CONN_STR ?= "postgres://postgres:docker@localhost/profiletest?sslmode=disable"
+PROFILE_TEST_DB_CONN_STR ?= "postgres://postgres:password@localhost/profiletest?sslmode=disable"
 
 build:
 	go build -o build/profile ./cmd/profile
-	go build -o build/bots ./cmd/comms/bots
 	go build -o build/coordinator ./cmd/comms/coordinator
 	go build -o build/server ./cmd/comms/server
 	go build -o build/identity ./cmd/identity
-	go build -o build/keygen ./cmd/keygen
+
+buildall: build
+	go build -o build/cli_bot ./cmd/cli/bot
+	go build -o build/cli_keygen ./cmd/cli/keygen
 
 fmt:
 	gofmt -w .
 	goimports -w .
 
 test:
-	go test -v ./... -count=1
+	go test -race $(TEST_FLAGS) ./... -count=1
 	PROFILE_TEST_DB_CONN_STR=$(PROFILE_TEST_DB_CONN_STR) go test -race -count=1 $(TEST_FLAGS) -tags=integration github.com/decentraland/world/internal/profile_test
 
 profileci:

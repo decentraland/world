@@ -28,15 +28,15 @@ services:
   db:
     image: postgres:latest
     restart: always
+    volumes:
+      - ./bin/compose-init-db.sh:/docker-entrypoint-initdb.d/initdb.sh
+      - ./internal/profile/db.sql:/docker-entrypoint-initdb.d/sql/init_profile.sql
+      - ./postgres-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_MULTIPLE_DATABASES=profile
-    volumes:
-      - ./internal/profile/db.sql:/docker-entrypoint-initdb.d/01_profile.sql
-      - ./postgres-data:/var/lib/postgresql/data
     ports:
-      - 5436:5432
+      - 5432:5432
 
   profile:
     image: golang:1.12.0
@@ -57,7 +57,7 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it identity:9001 -- go run cmd/comms/coordinator/main.go --host=0.0.0.0 --noopEnabled
+    command: ./bin/wait-for-it identity:9001 -- go run cmd/comms/coordinator/main.go --authURL=http://identity:9001/api/v1/public_key --host=0.0.0.0
     ports:
       - "9000:9000"
     depends_on:
@@ -69,29 +69,7 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it coordinator:9000 -- go run cmd/comms/server/main.go --coordinatorURL=ws://coordinator:9000 --noopEnabled
+    command: ./bin/wait-for-it coordinator:9000 -- go run cmd/comms/server/main.go --coordinatorURL=ws://coordinator:9000 --authURL=http://identity:9001/api/v1/public_key
     depends_on:
       - identity
       - coordinator
-
-  prometheus:
-    image: prom/prometheus:v2.9.2
-    volumes:
-     - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
-    ports:
-      - "9090:9090"
-    depends_on:
-      - node-exporter
-
-  node-exporter:
-    image: prom/node-exporter:v0.17.0
-    ports:
-      - "9100:9100"
-
-  grafana:
-    image: grafana/grafana:6.1.6
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus

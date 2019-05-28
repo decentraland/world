@@ -14,7 +14,6 @@ import (
 	"github.com/decentraland/world/internal/gindcl"
 	"github.com/decentraland/world/internal/identity/data"
 	"github.com/decentraland/world/internal/identity/repository"
-	"github.com/decentraland/world/internal/identity/validation"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v9"
@@ -31,8 +30,8 @@ type Application struct {
 }
 
 type TokenRequest struct {
-	UserToken string `json:"user_token"`
-	PublicKey string `json:"pub_key"`
+	UserToken string `json:"user_token" validate:"required"`
+	PublicKey string `json:"pub_key" validate:"required"`
 }
 
 type AuthRequest struct {
@@ -46,17 +45,32 @@ type AuthResponse struct {
 	LogoutURL string `json:"logout_url"`
 }
 
-func InitApi(auth0Service data.IAuth0Service, key *ecdsa.PrivateKey, router *gin.Engine, clientRepository repository.ClientRepository, serverURL string, jwtDuration time.Duration) error {
-	generator := token.New(key, "1.0", jwtDuration)
+type Config struct {
+	Auth0Service     data.IAuth0Service
+	Key              *ecdsa.PrivateKey
+	ClientRepository repository.ClientRepository
+	ServerURL        string
+	JWTDuration      time.Duration
+}
 
-	publicKey, err := utils.PemEncodePublicKey(&key.PublicKey)
+func InitApi(router *gin.Engine, config *Config) error {
+	generator := token.New(config.Key, "1.0", config.JWTDuration)
+
+	publicKey, err := utils.PemEncodePublicKey(&config.Key.PublicKey)
 	if err != nil {
 		return err
 	}
 
 	router.Use(gindcl.CorsMiddleware())
 
-	app := &Application{auth0: auth0Service, generator: generator, pubkey: publicKey, clientRepository: clientRepository, serverURL: serverURL, validator: validator.New()}
+	app := &Application{
+		auth0:            config.Auth0Service,
+		generator:        generator,
+		pubkey:           publicKey,
+		clientRepository: config.ClientRepository,
+		serverURL:        config.ServerURL,
+		validator:        validator.New(),
+	}
 
 	api := router.Group("/api")
 
@@ -116,11 +130,6 @@ func (a *Application) token(c *gin.Context) {
 
 	if err := a.validator.Struct(params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields"})
-		return
-	}
-
-	if !validation.ValidateEphemeralKey(params.PublicKey) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "public key found, but looks invalid"})
 		return
 	}
 

@@ -29,7 +29,14 @@ func TestOptionsHeaderResponse(t *testing.T) {
 
 	router := gin.Default()
 
-	if err := InitApi(auth0, key, router, repo, "auth.decentraland.zone", time.Second); err != nil {
+	config := Config{
+		Auth0Service:     auth0,
+		Key:              key,
+		ClientRepository: repo,
+		ServerURL:        "auth.decentraland.zone",
+		JWTDuration:      time.Second,
+	}
+	if err := InitApi(router, &config); err != nil {
 		t.Fail()
 	}
 

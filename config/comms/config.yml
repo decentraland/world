@@ -1,4 +1,8 @@
+coordinatorURL: "ws://localhost:9000"
 coordinatorHost: 'localhost'
 coordinatorPort: 9000
-coordinatorURL: "ws://localhost:9000"
 logLevel:        'info'
+
+auth:
+    serverSecret: "123456"
+    authTTL: 100
