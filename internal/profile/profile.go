@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/decentraland/world/internal/gindcl"
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/decentraland/world/internal/gindcl"
 
 	"github.com/decentraland/world/internal/auth"
 
@@ -140,7 +141,6 @@ DO UPDATE SET profile = $2`,
 
 		c.JSON(http.StatusNoContent, gin.H{})
 	})
-
 
 	v1.OPTIONS("/profile", gindcl.PrefligthChecksMiddleware("POST, GET", "*"))
 

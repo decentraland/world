@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"errors"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"io/ioutil"
 	"net/http"
 )
@@ -42,7 +42,7 @@ func PemDecodePrivateKey(pvKey string) (*ecdsa.PrivateKey, error) {
 	}
 	keyBytes := decoded.Bytes
 
-	privateKey, err := x509.ParseECPrivateKey(keyBytes);
+	privateKey, err := x509.ParseECPrivateKey(keyBytes)
 	if err != nil {
 		return nil, err
 	}

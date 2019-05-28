@@ -3,17 +3,17 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/decentraland/world/internal/gindcl"
+	"net/http"
 
 	"github.com/decentraland/world/internal/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
+	"github.com/decentraland/world/internal/gindcl"
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type profileConfig struct {
@@ -60,11 +60,10 @@ func main() {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
 
-	prometheusHandler := promhttp.Handler()
-
-	router.GET("/metrics", func(c *gin.Context) {
-		prometheusHandler.ServeHTTP(c.Writer, c.Request)
-	})
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
 
 	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
 	if err := router.Run(addr); err != nil {

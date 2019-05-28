@@ -2,25 +2,21 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
-	_ "net/http/pprof"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/world/internal/comms/bots"
 )
 
 func main() {
-	addr := flag.String("worldURL", "ws://localhost:9090/connect", "")
+	coordinatorURL := flag.String("coordinatorURL", "ws://localhost:9000/connect", "")
 	centerXP := flag.Int("centerX", 0, "")
 	centerYP := flag.Int("centerY", 0, "")
 	radiusP := flag.Int("radius", 3, "radius (in parcels) from the center")
 	subscribeP := flag.Bool("subscribe", false, "subscribe to the position and profile topics of the comm area")
 	nBotsP := flag.Int("n", 5, "number of bots")
 	authMethodP := flag.String("authMethod", "noop", "")
-	profilerPort := flag.Int("profilerPort", -1, "If not provided, profiler won't be enabled")
 	trackStats := flag.Bool("trackStats", false, "")
 
 	flag.Parse()
@@ -36,14 +32,6 @@ func main() {
 	subscribe := *subscribeP
 	authMethod := *authMethodP
 
-	if *profilerPort != -1 {
-		go func() {
-			addr := fmt.Sprintf("localhost:%d", *profilerPort)
-			log.Println("Starting profiler at", addr)
-			log.Println(http.ListenAndServe(addr, nil))
-		}()
-	}
-
 	for i := 0; i < *nBotsP; i++ {
 		var checkpoints [6]bots.V3
 
@@ -56,7 +44,7 @@ func main() {
 		}
 
 		opts := bots.BotOptions{
-			CoordinatorURL:            *addr,
+			CoordinatorURL:            *coordinatorURL,
 			Auth:                      auth,
 			AuthMethod:                authMethod,
 			Checkpoints:               checkpoints[:],

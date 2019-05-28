@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type commServerConfig struct {
@@ -56,6 +58,11 @@ func main() {
 	if err := commserver.ConnectCoordinator(state); err != nil {
 		log.Fatal("connect coordinator failure ", err)
 	}
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
 
 	go commserver.ProcessMessagesQueue(state)
 	commserver.Process(state)
