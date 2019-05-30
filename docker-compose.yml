@@ -1,23 +1,97 @@
-version: "2"
+version: "3.7"
 services:
+
+  # NOTE: we should define the container like this to use the dockerfile
+  # maybe in the future we should have a docker-compose for dev and one for release? (without metrics?)
+  # identity:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   command: ["build/identity", "--host", "0.0.0.0"]
+  #   ports:
+  #     - "9001:9001"
+
+  # NOTE: we are sharing the host modules path, so
+  # 1. ensure to set GOPATH
+  # 2. it's probably more efficient to ensure the deps are installed before running up
+
+  identity:
+    image: golang:1.12.0
+    volumes:
+      - .:/app
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    working_dir: /app
+    command: go run cmd/identity/main.go --host=0.0.0.0
+    ports:
+      - "9001:9001"
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_MULTIPLE_DATABASES=profile
+    volumes:
+      - ./internal/profile/db.sql:/docker-entrypoint-initdb.d/01_profile.sql
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5436:5432
+
+  profile:
+    image: golang:1.12.0
+    volumes:
+      - .:/app
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    working_dir: /app
+    command: ./bin/wait-for-it identity:9001 -- go run cmd/profile/main.go --connStr=postgres://postgres:password@db/profile --authURL=http://identity:9001/api/v1/public_key --host=0.0.0.0
+    ports:
+      - "9002:9002"
+    depends_on:
+      - identity
+      - db
+
+  coordinator:
+    image: golang:1.12.0
+    volumes:
+      - .:/app
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    working_dir: /app
+    command: ./bin/wait-for-it identity:9001 -- go run cmd/comms/coordinator/main.go --host=0.0.0.0 --noopEnabled
+    ports:
+      - "9000:9000"
+    depends_on:
+      - identity
+
+  worldcomm:
+    image: golang:1.12.0
+    volumes:
+      - .:/app
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    working_dir: /app
+    command: ./bin/wait-for-it coordinator:9000 -- go run cmd/comms/server/main.go --coordinatorURL=ws://coordinator:9000 --noopEnabled
+    depends_on:
+      - identity
+      - coordinator
+
   prometheus:
     image: prom/prometheus:v2.9.2
     volumes:
      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
     ports:
-     - "9090:9090"
+      - "9090:9090"
     depends_on:
-     - node-exporter
+      - node-exporter
 
   node-exporter:
     image: prom/node-exporter:v0.17.0
     ports:
-     - "9100:9100"
+      - "9100:9100"
 
   grafana:
     image: grafana/grafana:6.1.6
     ports:
-     - "3000:3000"
+      - "3000:3000"
     depends_on:
       - prometheus

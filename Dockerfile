@@ -13,7 +13,6 @@ COPY . .
 RUN apt-get update && apt-get install -y \
     libssl-dev
 
-RUN go get -d -v ./...
 RUN make build
 RUN go install -v ./...
 

@@ -8,6 +8,7 @@ import (
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type coordinatorConfig struct {
@@ -47,6 +48,11 @@ func main() {
 
 	mux := http.NewServeMux()
 	coordinator.Register(state, mux)
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
 
 	addr := fmt.Sprintf("%s:%d", conf.CoordinatorHost, conf.CoordinatorPort)
 	log.Infof("starting coordinator %s - version: %s", addr, conf.Version)
