@@ -1,4 +1,4 @@
-package bots
+package cli
 
 import (
 	"errors"
@@ -6,13 +6,20 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"net/url"
 	"time"
+
+	"github.com/decentraland/auth-go/pkg/ephemeral"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/golang/protobuf/proto"
+
+	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	broker "github.com/decentraland/webrtc-broker/pkg/protocol"
 	"github.com/decentraland/webrtc-broker/pkg/simulation"
 	"github.com/decentraland/world/pkg/protocol"
-	"github.com/golang/protobuf/proto"
 	pion "github.com/pion/webrtc/v2"
 	"github.com/segmentio/ksuid"
 )
@@ -98,18 +105,125 @@ func encodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
 	return bytes, nil
 }
 
-type BotOptions struct {
-	Auth                      authentication.Authentication
-	AuthMethod                string
-	CoordinatorURL            string
-	Avatar                    *string
-	Checkpoints               []V3
-	DurationMs                uint
-	SubscribeToPositionTopics bool
-	TrackStats                bool
+type ClientAuthenticator struct {
+	AuthURL      string
+	EphemeralKey *ephemeral.EphemeralKey
+
+	Email    string
+	Password string
+
+	Auth0Domain       string
+	Auth0ClientID     string
+	Auth0ClientSecret string
+	Auth0Audience     string
 }
 
-func Start(options *BotOptions) {
+func (a *ClientAuthenticator) getAccessToken() (string, error) {
+	auth0 := Auth0{
+		Domain:       a.Auth0Domain,
+		ClientID:     a.Auth0ClientID,
+		ClientSecret: a.Auth0ClientSecret,
+		Audience:     a.Auth0Audience,
+		Email:        a.Email,
+		Password:     a.Password,
+	}
+
+	userToken, err := auth0.GetUserToken()
+	if err != nil {
+		fmt.Println("error getting auth0 token", err)
+		return "", nil
+	}
+
+	fmt.Println("user token", userToken)
+
+	auth := Auth{
+		AuthBaseURL: a.AuthURL,
+		UserToken:   userToken,
+		PubKey:      hexutil.Encode(crypto.CompressPubkey(a.EphemeralKey.PublicKey())),
+	}
+
+	accessToken, err := auth.GetAccessToken()
+	if err != nil {
+		fmt.Println("error getting access token", err)
+		return "", nil
+	}
+
+	fmt.Println("access token", accessToken)
+
+	return accessToken, nil
+}
+
+func (a *ClientAuthenticator) GenerateClientAuthMessage() (*brokerProtocol.AuthMessage, error) {
+	accessToken, err := a.getAccessToken()
+	if err != nil {
+		return nil, err
+	}
+
+	msg := []byte{}
+
+	fields, err := a.EphemeralKey.MakeCredentials(msg, accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	data := protocol.AuthData{
+		Signature:   fields["x-signature"],
+		Identity:    fields["x-identity"],
+		Timestamp:   fields["x-timestamp"],
+		AccessToken: fields["x-access-token"],
+	}
+
+	encodedData, err := proto.Marshal(&data)
+	if err != nil {
+		return nil, err
+	}
+
+	m := &brokerProtocol.AuthMessage{
+		Type: brokerProtocol.MessageType_AUTH,
+		Role: brokerProtocol.Role_CLIENT,
+		Body: encodedData,
+	}
+
+	return m, nil
+}
+
+func (a *ClientAuthenticator) GenerateClientConnectURL(coordinatorURL string) (string, error) {
+	u, err := url.Parse(coordinatorURL)
+	if err != nil {
+		return "", nil
+	}
+
+	accessToken, err := a.getAccessToken()
+	if err != nil {
+		return "", nil
+	}
+
+	msg := []byte{}
+	fields, err := a.EphemeralKey.MakeCredentials(msg, accessToken)
+	if err != nil {
+		return "", err
+	}
+
+	v := url.Values{}
+	v.Set("signature", fields["x-signature"])
+	v.Set("identity", fields["x-identity"])
+	v.Set("timestamp", fields["x-timestamp"])
+	v.Set("access-token", fields["x-access-token"])
+
+	u.RawQuery = v.Encode()
+	return u.String(), nil
+}
+
+type BotOptions struct {
+	Auth           authentication.ClientAuthenticator
+	CoordinatorURL string
+	Avatar         *string
+	Checkpoints    []V3
+	DurationMs     uint
+	TrackStats     bool
+}
+
+func StartBot(options *BotOptions) {
 	if len(options.Checkpoints) < 2 {
 		log.Fatal(errors.New("invalid path, need at least two checkpoints"))
 	}
@@ -125,7 +239,6 @@ func Start(options *BotOptions) {
 	peerID := ksuid.New().String()
 	config := simulation.Config{
 		Auth:           options.Auth,
-		AuthMethod:     options.AuthMethod,
 		CoordinatorURL: options.CoordinatorURL,
 		ICEServers: []pion.ICEServer{
 			{
@@ -279,41 +392,39 @@ func Start(options *BotOptions) {
 				p = nextCheckpoint
 			}
 
-			if options.SubscribeToPositionTopics {
-				topics := make(map[string]bool)
-				radius := 4
-				parcelX := int(p.X / parcelSize)
-				parcelZ := int(p.Z / parcelSize)
+			topics := make(map[string]bool)
+			radius := 4
+			parcelX := int(p.X / parcelSize)
+			parcelZ := int(p.Z / parcelSize)
 
-				minX := ((max(minParcel, parcelX-radius) + maxParcel) >> 2) << 2
-				maxX := ((min(maxParcel, parcelX+radius) + maxParcel) >> 2) << 2
-				minZ := ((max(minParcel, parcelZ-radius) + maxParcel) >> 2) << 2
-				maxZ := ((min(maxParcel, parcelZ+radius) + maxParcel) >> 2) << 2
+			minX := ((max(minParcel, parcelX-radius) + maxParcel) >> 2) << 2
+			maxX := ((min(maxParcel, parcelX+radius) + maxParcel) >> 2) << 2
+			minZ := ((max(minParcel, parcelZ-radius) + maxParcel) >> 2) << 2
+			maxZ := ((min(maxParcel, parcelZ+radius) + maxParcel) >> 2) << 2
 
-				newTopics := make(map[string]bool)
-				topicsChanged := false
+			newTopics := make(map[string]bool)
+			topicsChanged := false
 
-				for x := minX; x <= maxX; x += 4 {
-					for z := minZ; z <= maxZ; z += 4 {
-						hash := fmt.Sprintf("%d:%d", x>>2, z>>2)
-						positionTopic := fmt.Sprintf("position:%s", hash)
-						profileTopic := fmt.Sprintf("profile:%s", hash)
-						chatTopic := fmt.Sprintf("chat:%s", hash)
+			for x := minX; x <= maxX; x += 4 {
+				for z := minZ; z <= maxZ; z += 4 {
+					hash := fmt.Sprintf("%d:%d", x>>2, z>>2)
+					positionTopic := fmt.Sprintf("position:%s", hash)
+					profileTopic := fmt.Sprintf("profile:%s", hash)
+					chatTopic := fmt.Sprintf("chat:%s", hash)
 
-						newTopics[positionTopic] = true
-						newTopics[profileTopic] = true
-						newTopics[chatTopic] = true
+					newTopics[positionTopic] = true
+					newTopics[profileTopic] = true
+					newTopics[chatTopic] = true
 
-						if !topics[positionTopic] || !topics[profileTopic] {
-							topicsChanged = true
-						}
+					if !topics[positionTopic] || !topics[profileTopic] {
+						topicsChanged = true
 					}
 				}
+			}
 
-				if topicsChanged {
-					topics = newTopics
-					client.SendTopicSubscriptionMessage(newTopics)
-				}
+			if topicsChanged {
+				topics = newTopics
+				client.SendTopicSubscriptionMessage(newTopics)
 			}
 
 			topic := fmt.Sprintf("position:%s", hashLocation())

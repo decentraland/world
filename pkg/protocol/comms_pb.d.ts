@@ -3,6 +3,38 @@
 
 import * as jspb from "google-protobuf";
 
+export class AuthData extends jspb.Message {
+  getSignature(): string;
+  setSignature(value: string): void;
+
+  getIdentity(): string;
+  setIdentity(value: string): void;
+
+  getTimestamp(): string;
+  setTimestamp(value: string): void;
+
+  getAccessToken(): string;
+  setAccessToken(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AuthData.AsObject;
+  static toObject(includeInstance: boolean, msg: AuthData): AuthData.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AuthData, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AuthData;
+  static deserializeBinaryFromReader(message: AuthData, reader: jspb.BinaryReader): AuthData;
+}
+
+export namespace AuthData {
+  export type AsObject = {
+    signature: string,
+    identity: string,
+    timestamp: string,
+    accessToken: string,
+  }
+}
+
 export class DataHeader extends jspb.Message {
   getCategory(): Category;
   setCategory(value: Category): void;

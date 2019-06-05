@@ -5,8 +5,8 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
-	github.com/decentraland/auth-go v0.0.0-20190509141648-516b4ab3d379
-	github.com/decentraland/webrtc-broker v0.0.0-20190506185846-c0b04c0e7344
+	github.com/decentraland/auth-go v0.0.0-20190605200116-aa3a466745c4
+	github.com/decentraland/webrtc-broker v0.0.0-20190605200438-d94e372d5e58
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
@@ -23,8 +23,7 @@ require (
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/pion/webrtc/v2 v2.0.7
-	github.com/prometheus/client_golang v0.9.2
+	github.com/pion/webrtc/v2 v2.0.18-0.20190604045856-ae7036afe669
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/viper v1.3.2

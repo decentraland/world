@@ -4,46 +4,37 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/decentraland/world/internal/commons/utils"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
-	"github.com/decentraland/auth-go/pkg/authentication"
-	"github.com/decentraland/auth-go/pkg/authorization"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-const (
-	AuthOff        = "off"
-	AuthThirdParty = "third-party"
-)
-
-type Configuration struct {
-	Mode          string `overwrite-flag:"authMode" flag-usage:"off, third-party" validate:"required"`
-	AuthServerURL string `overwrite-flag:"authURL" flag-usage:"path to the file containing the auth-service public key"`
-	RequestTTL    int64  `overwrite-flag:"authTtl" flag-usage:"request time to live"`
+type MiddlewareConfiguration struct {
+	AuthServerURL string
+	RequestTTL    int64
 }
 
-func NewAuthMiddleware(c *Configuration, publicURL string) (func(ctx *gin.Context), error) {
-	switch strings.ToLower(c.Mode) {
-	case AuthOff:
-		return nil, nil
-	case AuthThirdParty:
-		k, err := utils.ReadRemotePublicKey(c.AuthServerURL)
-		if err != nil {
-			return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerURL, err)
-		}
-		return NewThirdPartyAuthMiddleware(k, c.RequestTTL, publicURL)
-	default:
-		return nil, fmt.Errorf("undefined authentication mode: %s", c.Mode)
+func NewAuthMiddleware(c *MiddlewareConfiguration, publicURL string) (func(ctx *gin.Context), error) {
+	pubKey, err := utils.ReadRemotePublicKey(c.AuthServerURL)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerURL, err)
 	}
+
+	return NewThirdPartyAuthMiddleware(pubKey, c.RequestTTL, publicURL)
 }
 
-func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64, publicURL string) (func(ctx *gin.Context), error) {
-	authnStrategy := &authentication.ThirdPartyStrategy{RequestLifeSpan: reqTtl, TrustedKey: pubKey}
-	authHandler := auth2.NewAuthProvider(authnStrategy, &authorization.AllowAllStrategy{})
+func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTTL int64, publicURL string) (func(ctx *gin.Context), error) {
+	authHandler, err := auth2.NewThirdPartyAuthProvider(&auth2.ThirdPartyProviderConfig{
+		RequestLifeSpan: reqTTL,
+		TrustedKey:      pubKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return func(ctx *gin.Context) {
 		if ctx.Request.Method == http.MethodOptions {
 			ctx.Next()
@@ -75,7 +66,7 @@ func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTtl int64, publicUR
 }
 
 func IdExtractorMiddleware(ctx *gin.Context) {
-	token, err := authentication.ExtractAuthTokenPayload(ctx.Request.Header.Get(auth2.HeaderAccessToken))
+	token, err := auth2.ExtractAuthTokenPayload(ctx.Request.Header.Get(auth2.HeaderAccessToken))
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "unable to extract id from request"})
 		return

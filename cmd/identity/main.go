@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	configuration "github.com/decentraland/world/internal/commons/config"
@@ -13,13 +12,17 @@ import (
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/decentraland/world/internal/identity/web"
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
 )
 
+type Auth0Config struct {
+	BaseURL string `overwrite-flag:"auth0BaseURL"`
+	Domain  string `overwrite-flag:"auth0Domain"`
+}
+
 type identityConf struct {
-	Auth0           data.Auth0Config
+	Auth0           Auth0Config
 	LogLevel        string `overwrite-flag:"logLevel"`
 	JwtDuration     time.Duration
 	ClientsDataPath string `overwrite-flag:"clientsDataPath"`
@@ -53,7 +56,10 @@ func main() {
 		log.WithError(err).Fatal("Fail to start server. Error while reading Private key")
 	}
 
-	auth0, err := data.MakeAuth0Service(conf.Auth0)
+	auth0, err := data.MakeAuth0Service(data.Auth0Config{
+		BaseURL: conf.Auth0.BaseURL,
+		Domain:  conf.Auth0.BaseURL,
+	})
 	if err != nil {
 		log.WithError(err).Fatal("Fail to initialize Auth0 Client")
 	}
@@ -63,16 +69,19 @@ func main() {
 		log.WithError(err).Fatal("Fail to initialize Client repository")
 	}
 
-	if err := api.InitApi(auth0, key, router, repo, conf.Server.PublicURL, conf.JwtDuration); err != nil {
+	config := api.Config{
+		Auth0Service:     auth0,
+		Key:              key,
+		ClientRepository: repo,
+		ServerURL:        conf.Server.PublicURL,
+		JWTDuration:      conf.JwtDuration,
+	}
+
+	if err := api.InitApi(router, &config); err != nil {
 		log.WithError(err).Fatal("Fail to initialize routes")
 	}
 
 	web.SiteContent(router, repo, conf.Server.PublicURL, conf.Auth0.Domain)
-
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":2112", nil)
-	}()
 
 	addr := fmt.Sprintf("%s:%d", conf.Server.Host, conf.Server.Port)
 	if err := router.Run(addr); err != nil {

@@ -14,8 +14,8 @@ const (
 )
 
 type Auth0Config struct {
-	BaseURL string `overwrite-flag:"auth0BaseURL"`
-	Domain  string `overwrite-flag:"auth0Domain"`
+	BaseURL string
+	Domain  string
 }
 
 type User struct {
@@ -56,14 +56,6 @@ type AuthApiErrorResponse struct {
 	ErrorDescription string `json:"error_description"`
 }
 
-func (s *Auth0Service) getWithAuth(url string, token string) (*http.Response, error) {
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("content-type", "application/json")
-	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
-	client := http.Client{Timeout: requestTimeout}
-	return client.Do(req)
-}
-
 type GetUserInfoResponse struct {
 	Sub   string `json:"sub"`
 	Email string `json:"email"`
@@ -72,7 +64,11 @@ type GetUserInfoResponse struct {
 func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	user := User{}
 
-	res, err := s.getWithAuth(s.getUserInfoURL, accessToken)
+	req, _ := http.NewRequest("GET", s.getUserInfoURL, nil)
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", accessToken))
+	client := http.Client{Timeout: requestTimeout}
+	res, err := client.Do(req)
 	if err != nil {
 		return user, err
 	}
