@@ -8,3 +8,8 @@ auth:
   mode:       "third-party" # Set authMode flag to overwrite this value
   requestTTL: 60            # Set authTtl flag to overwrite this value
   authServerUrl: "http://localhost:9001/api/v1/public_key" # Set authUrl flag to overwrite this value
+
+metricsConfig:
+  enabled:    true             # Set metrics flag to overwrite this value
+  traceName: 'profileService'  # Set traceName flag to overwrite this value
+  analyticsRateEnabled:  true   # Set rateEnabled flag to overwrite this value

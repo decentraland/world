@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/decentraland/world/internal/commons/metrics"
 	"time"
 
 	configuration "github.com/decentraland/world/internal/commons/config"
@@ -28,12 +29,19 @@ type identityConf struct {
 	ClientsDataPath string `overwrite-flag:"clientsDataPath"`
 	Server          Server
 	PrivateKeyPath  string `overwrite-flag:"privateKeyPath" validate:"required"`
+	MetricsConfig   metricsConfig
 }
 
 type Server struct {
 	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 	PublicURL string `overwrite-flag:"publicURL" validate:"required"`
+}
+
+type metricsConfig struct {
+	Enabled              bool	`overwrite-flag:"metrics" flag-usage:"enable metrics"`
+	TraceName            string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+	AnalyticsRateEnabled bool   `overwrite-flag:"rateEnabled" flag-usage:"metrics analytics rate"`
 }
 
 func main() {
@@ -75,6 +83,16 @@ func main() {
 		ClientRepository: repo,
 		ServerURL:        conf.Server.PublicURL,
 		JWTDuration:      conf.JwtDuration,
+	}
+
+	if conf.MetricsConfig.Enabled {
+		metricsConfig := &metrics.HttpMetricsConfig{
+			TraceName:  conf.MetricsConfig.TraceName,
+			AnalyticsRateEnabled: conf.MetricsConfig.AnalyticsRateEnabled,
+		}
+		if err := metrics.EnableRouterMetrics(metricsConfig, router); err != nil {
+			log.WithError(err).Fatal("Unable to start metrics")
+		}
 	}
 
 	if err := api.InitApi(router, &config); err != nil {
