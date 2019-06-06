@@ -11,10 +11,11 @@ server:
 
 jwtDuration: 60  # Duration in seconds of the json web token
 
-metrics:
-  appName: ''  # Set METRICS_APP_NAME env variable to overwrite this value
-  appKey:  ''  # Set METRICS_APP_KEY env variable to overwrite this value
-
 clientsDataPath: 'config/identity/enabledClients.json'
 
 privateKeyPath: "config/identity/defaultKeys/demoPrivate.key" # Set PRIV_KEY_PATH env variable to overwrite this value. Path to the file containing the private key in pem format
+
+metricsConfig:
+  enabled:    true             # Set metrics flag to overwrite this value
+  traceName: 'identityService'  # Set traceName flag to overwrite this value
+  analyticsRateEnabled:  true   # Set rateEnabled flag to overwrite this value
