@@ -9,9 +9,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/decentraland/world/internal/commons/token"
 	"github.com/decentraland/world/internal/commons/utils"
-	"github.com/decentraland/world/internal/gindcl"
 	"github.com/decentraland/world/internal/identity/data"
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/gin-gonic/gin"
@@ -22,7 +20,7 @@ import (
 type Application struct {
 	auth0            data.IAuth0Service
 	redirectURL      string
-	generator        *token.Generator // Signs jwt, maybe should update name?s
+	generator        *utils.TokenGenerator // Signs jwt, maybe should update name?s
 	pubkey           string
 	serverURL        string
 	clientRepository repository.ClientRepository
@@ -54,14 +52,14 @@ type Config struct {
 }
 
 func InitApi(router *gin.Engine, config *Config) error {
-	generator := token.New(config.Key, "1.0", config.JWTDuration)
+	generator := utils.NewTokenGenerator(config.Key, "1.0", config.JWTDuration)
 
 	publicKey, err := utils.PemEncodePublicKey(&config.Key.PublicKey)
 	if err != nil {
 		return err
 	}
 
-	router.Use(gindcl.CorsMiddleware())
+	router.Use(utils.CorsMiddleware())
 
 	app := &Application{
 		auth0:            config.Auth0Service,
@@ -82,9 +80,9 @@ func InitApi(router *gin.Engine, config *Config) error {
 	v1.POST("/token", app.token)
 
 	// Handle pre-flight checks one by one
-	v1.OPTIONS("/public_key", gindcl.PrefligthChecksMiddleware("GET", "*"))
-	v1.OPTIONS("/auth", gindcl.PrefligthChecksMiddleware("POST", "*"))
-	v1.OPTIONS("/token", gindcl.PrefligthChecksMiddleware("POST", "*"))
+	v1.OPTIONS("/public_key", utils.PrefligthChecksMiddleware("GET", "*"))
+	v1.OPTIONS("/auth", utils.PrefligthChecksMiddleware("POST", "*"))
+	v1.OPTIONS("/token", utils.PrefligthChecksMiddleware("POST", "*"))
 
 	return nil
 }

@@ -8,9 +8,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/decentraland/world/internal/gindcl"
-
-	"github.com/decentraland/world/internal/auth"
+	"github.com/decentraland/world/internal/commons/auth"
+	"github.com/decentraland/world/internal/commons/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -142,7 +141,7 @@ DO UPDATE SET profile = $2`,
 		c.JSON(http.StatusNoContent, gin.H{})
 	})
 
-	v1.OPTIONS("/profile", gindcl.PrefligthChecksMiddleware("POST, GET", "*"))
+	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", "*"))
 
 	return nil
 }

@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
-	"github.com/decentraland/world/internal/auth"
-	configuration "github.com/decentraland/world/internal/commons/config"
+	"github.com/decentraland/world/internal/commons/auth"
+	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
 )
 
@@ -29,7 +29,7 @@ func main() {
 	defer logging.LogPanic()
 
 	var conf coordinatorConfig
-	if err := configuration.ReadConfiguration("config/comms/config", &conf); err != nil {
+	if err := config.ReadConfiguration("config/comms/config", &conf); err != nil {
 		log.Fatal(err)
 	}
 
