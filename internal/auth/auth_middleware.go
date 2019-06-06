@@ -39,27 +39,27 @@ func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTTL int64, publicUR
 		if ctx.Request.Method == http.MethodOptions {
 			ctx.Next()
 		} else {
-			//req, err := auth2.MakeFromHttpRequest(ctx.Request, publicURL)
-			//if err != nil {
-			//	ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
-			//	return
-			//}
-			//ok, err := authHandler.ApproveRequest(req)
-			//if err != nil {
-			//	switch err := err.(type) {
-			//	case auth2.AuthenticationError:
-			//		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			//	case auth2.AuthorizationError:
-			//		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-			//	default:
-			//		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			//	}
-			//	return
-			//}
-			//if !ok {
-			//	ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
-			//	return
-			//}
+			req, err := auth2.MakeFromHttpRequest(ctx.Request, publicURL)
+			if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
+				return
+			}
+			ok, err := authHandler.ApproveRequest(req)
+			if err != nil {
+				switch err := err.(type) {
+				case auth2.AuthenticationError:
+					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+				case auth2.AuthorizationError:
+					ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+				default:
+					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				}
+				return
+			}
+			if !ok {
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
+				return
+			}
 			ctx.Next()
 		}
 	}, nil

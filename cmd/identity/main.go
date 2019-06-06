@@ -39,7 +39,7 @@ type Server struct {
 }
 
 type metricsConfig struct {
-	Enabled              bool	`overwrite-flag:"metrics" flag-usage:"enable metrics"`
+	Enabled              bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
 	TraceName            string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
 	AnalyticsRateEnabled bool   `overwrite-flag:"rateEnabled" flag-usage:"metrics analytics rate"`
 }
@@ -87,12 +87,13 @@ func main() {
 
 	if conf.MetricsConfig.Enabled {
 		metricsConfig := &metrics.HttpMetricsConfig{
-			TraceName:  conf.MetricsConfig.TraceName,
+			TraceName:            conf.MetricsConfig.TraceName,
 			AnalyticsRateEnabled: conf.MetricsConfig.AnalyticsRateEnabled,
 		}
 		if err := metrics.EnableRouterMetrics(metricsConfig, router); err != nil {
 			log.WithError(err).Fatal("Unable to start metrics")
 		}
+		defer metrics.StopMetrics()
 	}
 
 	if err := api.InitApi(router, &config); err != nil {
