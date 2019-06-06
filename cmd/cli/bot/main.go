@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 
-	"github.com/decentraland/auth-go/pkg/ephemeral"
 	"github.com/decentraland/world/internal/cli"
 )
 
@@ -37,17 +36,9 @@ func main() {
 	// 	log.Fatal("--email, --password, --auth0Domain is required")
 	// }
 
-	privateKey, err := cli.ReadKey(*keyPath)
+	ephemeralKey, err := cli.ReadEphemeralKeyFromFile(*keyPath)
 	if err != nil {
-		log.Fatalf("cannot load private key from file %s: %v", *keyPath, err)
-	}
-
-	config := ephemeral.EphemeralKeyConfig{
-		PrivateKey: privateKey,
-	}
-	ephemeralKey, err := ephemeral.NewEphemeralKey(&config)
-	if err != nil {
-		log.Fatalf("cannot create ephemeral key: %v", err)
+		log.Fatalf("error loading ephemeral key: %v", err)
 	}
 
 	auth := &cli.ClientAuthenticator{

@@ -44,7 +44,7 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it identity:9001 -- go run cmd/profile/main.go --connStr=postgres://postgres:password@db/profile --authURL=http://identity:9001/api/v1/public_key --host=0.0.0.0
+    command: ./bin/wait-for-it identity:9001 -- go run cmd/profile/main.go --connStr=postgres://postgres:password@db/profile?sslmode=disable --authURL=http://identity:9001/api/v1/public_key --host=0.0.0.0
     ports:
       - "9002:9002"
     depends_on:

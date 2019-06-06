@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/protobuf/proto"
 
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
@@ -128,29 +126,12 @@ func (a *ClientAuthenticator) getAccessToken() (string, error) {
 		Password:     a.Password,
 	}
 
-	userToken, err := auth0.GetUserToken()
-	if err != nil {
-		fmt.Println("error getting auth0 token", err)
-		return "", nil
-	}
-
-	fmt.Println("user token", userToken)
-
 	auth := Auth{
-		AuthBaseURL: a.AuthURL,
-		UserToken:   userToken,
-		PubKey:      hexutil.Encode(crypto.CompressPubkey(a.EphemeralKey.PublicKey())),
+		AuthURL: a.AuthURL,
+		PubKey:  EncodePublicKey(a.EphemeralKey),
 	}
 
-	accessToken, err := auth.GetAccessToken()
-	if err != nil {
-		fmt.Println("error getting access token", err)
-		return "", nil
-	}
-
-	fmt.Println("access token", accessToken)
-
-	return accessToken, nil
+	return ExecuteAuthFlow(&auth0, &auth)
 }
 
 func (a *ClientAuthenticator) GenerateClientAuthMessage() (*brokerProtocol.AuthMessage, error) {

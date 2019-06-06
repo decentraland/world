@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/decentraland/world/internal/commons/metrics"
 
 	"github.com/decentraland/world/internal/auth"
