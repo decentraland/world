@@ -14,7 +14,7 @@ import (
 	"github.com/decentraland/world/internal/identity/web"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	ginlogrus "github.com/toorop/gin-logrus"
+	"github.com/toorop/gin-logrus"
 )
 
 type Auth0Config struct {

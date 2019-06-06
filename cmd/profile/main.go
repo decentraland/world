@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"github.com/decentraland/world/internal/commons/metrics"
 
-	"github.com/decentraland/world/internal/auth"
+	"github.com/decentraland/world/internal/commons/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
-	"github.com/decentraland/world/internal/gindcl"
+	"github.com/decentraland/world/internal/commons/gindcl"
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	ginlogrus "github.com/toorop/gin-logrus"
+	"github.com/toorop/gin-logrus"
 )
 
 type authConfiguration struct {

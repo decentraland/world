@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
-	"github.com/decentraland/world/internal/auth"
+	"github.com/decentraland/world/internal/commons/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
 )

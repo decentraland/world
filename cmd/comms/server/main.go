@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
-	"github.com/decentraland/world/internal/auth"
+	"github.com/decentraland/world/internal/commons/auth"
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
 )

@@ -9,9 +9,9 @@ import (
 	"path"
 	"time"
 
+	"github.com/decentraland/world/internal/commons/gindcl"
 	"github.com/decentraland/world/internal/commons/token"
 	"github.com/decentraland/world/internal/commons/utils"
-	"github.com/decentraland/world/internal/gindcl"
 	"github.com/decentraland/world/internal/identity/data"
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/gin-gonic/gin"

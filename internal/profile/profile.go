@@ -8,9 +8,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/decentraland/world/internal/gindcl"
+	"github.com/decentraland/world/internal/commons/gindcl"
 
-	"github.com/decentraland/world/internal/auth"
+	"github.com/decentraland/world/internal/commons/auth"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
