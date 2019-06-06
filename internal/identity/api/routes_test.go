@@ -16,7 +16,6 @@ import (
 )
 
 func TestOptionsHeaderResponse(t *testing.T) {
-
 	mockController := gomock.NewController(t)
 	defer mockController.Finish()
 
@@ -36,7 +35,7 @@ func TestOptionsHeaderResponse(t *testing.T) {
 		ServerURL:        "auth.decentraland.zone",
 		JWTDuration:      time.Second,
 	}
-	if err := InitApi(router, &config); err != nil {
+	if err := InitAPI(router, &config); err != nil {
 		t.Fail()
 	}
 

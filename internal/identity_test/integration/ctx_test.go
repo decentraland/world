@@ -24,8 +24,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestContext struct {
-	User       TestUser
+type testContext struct {
+	User       testUser
 	Controller *gomock.Controller
 	Router     *gin.Engine
 	T          *testing.T
@@ -33,35 +33,35 @@ type TestContext struct {
 	Auth0      *mocks.MockIAuth0Service
 }
 
-type TestStep struct {
+type testStep struct {
 	Description string
 	Line        string
-	Step        func(ctx *TestContext) bool
+	Step        func(ctx *testContext) bool
 }
 
-type TestCase struct {
+type testCase struct {
 	Name  string
-	Steps []TestStep
+	Steps []testStep
 }
 
-func tests(tcs ...TestCase) []TestCase {
+func tests(tcs ...testCase) []testCase {
 	return tcs
 }
 
-func test(name string, fs ...TestStep) TestCase {
-	return TestCase{Name: name, Steps: fs}
+func test(name string, fs ...testStep) testCase {
+	return testCase{Name: name, Steps: fs}
 }
 
-func s(description string, f func(ctx *TestContext) bool) TestStep {
+func s(description string, f func(ctx *testContext) bool) testStep {
 	_, file, line, _ := runtime.Caller(1)
-	return TestStep{
+	return testStep{
 		Description: description,
 		Step:        f,
 		Line:        fmt.Sprintf("%s:%d", file, line),
 	}
 }
 
-func RunTest(ctx *TestContext, test *TestCase) bool {
+func RunTest(ctx *testContext, test *testCase) bool {
 	passed := true
 	failedAt := 0
 	for i, step := range test.Steps {
@@ -80,13 +80,13 @@ func RunTest(ctx *TestContext, test *TestCase) bool {
 	return passed
 }
 
-func NewContext(t *testing.T) *TestContext {
+func NewContext(t *testing.T) *testContext {
 	// disable logging
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = ioutil.Discard
 
-	ctx := TestContext{}
-	ctx.User = ValidUser()
+	ctx := testContext{}
+	ctx.User = validUser()
 	ctx.Controller = gomock.NewController(t)
 	ctx.T = t
 	ctx.Auth0 = mocks.NewMockIAuth0Service(ctx.Controller)
@@ -101,19 +101,19 @@ func NewContext(t *testing.T) *TestContext {
 		JWTDuration:      60,
 	}
 
-	if err := api.InitApi(ctx.Router, &config); err != nil {
+	if err := api.InitAPI(ctx.Router, &config); err != nil {
 		t.Fatal("Fail to initialize routes")
 	}
 	return &ctx
 }
 
-func SetupMocks(ctx *TestContext) {
+func SetupMocks(ctx *testContext) {
 	s := ctx.User.Token
 	user := ctx.User.User()
 	ctx.Auth0.EXPECT().GetUserInfo(s).Return(user, nil).AnyTimes()
 }
 
-func TimeTravel(ctx *TestContext) bool {
+func timeTravel(ctx *testContext) bool {
 	ctx.Router = gin.New()
 	config := api.Config{
 		Auth0Service:     ctx.Auth0,
@@ -122,30 +122,30 @@ func TimeTravel(ctx *TestContext) bool {
 		ServerURL:        "http://localhost:9091/",
 		JWTDuration:      time.Duration(-1),
 	}
-	api.InitApi(ctx.Router, &config)
+	api.InitAPI(ctx.Router, &config)
 	return true
 }
 
-func DefaultUser(ctx *TestContext) bool {
-	ctx.User = ValidUser()
+func DefaultUser(ctx *testContext) bool {
+	ctx.User = validUser()
 	return true
 }
 
-func InvalidUser(ctx *TestContext) bool {
+func InvalidUser(ctx *testContext) bool {
 	ctx.User.Token = "invalid_token"
 	ctx.Auth0.EXPECT().GetUserInfo(ctx.User.Token).Return(data.User{}, errors.New("Unknown error"))
 	return true
 }
 
-func UserWithKey(key string) func(ctx *TestContext) bool {
-	return func(ctx *TestContext) bool {
-		ctx.User = ValidUser()
+func UserWithKey(key string) func(ctx *testContext) bool {
+	return func(ctx *testContext) bool {
+		ctx.User = validUser()
 		ctx.User.EphemeralKey = key
 		return true
 	}
 }
 
-func CallRefresh(ctx *TestContext) bool {
+func callRefresh(ctx *testContext) bool {
 	w := httptest.NewRecorder()
 
 	params := `{"user_token":"` + ctx.User.Token + `", "pub_key":"` + ctx.User.EphemeralKey + `"}`
@@ -163,7 +163,7 @@ func CallRefresh(ctx *TestContext) bool {
 	return ok
 }
 
-func InvalidRefresh(ctx *TestContext) bool {
+func InvalidRefresh(ctx *testContext) bool {
 	w := httptest.NewRecorder()
 
 	params := `{"access_token":"` + ctx.User.Token + `", "ephemeral_key":"` + ctx.User.EphemeralKey + `"}`
@@ -179,12 +179,12 @@ func InvalidRefresh(ctx *TestContext) bool {
 	return ok
 }
 
-func AlterKey(ctx *TestContext) bool {
+func AlterKey(ctx *testContext) bool {
 	ctx.Key, _ = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	return true
 }
 
-func ValidSessionJWT(ctx *TestContext) bool {
+func validSessionJWT(ctx *testContext) bool {
 	token, err := jwt.Parse(ctx.User.SessionJWT, getKeyJWT(ctx.Key.X, ctx.Key.Y))
 	if err != nil {
 		return false
@@ -195,15 +195,15 @@ func ValidSessionJWT(ctx *TestContext) bool {
 	}
 	claimsKey, _ := claims["ephemeral_key"].(string)
 	claimsVersion, _ := claims["version"].(string)
-	claimsUserId, _ := claims["user_id"].(string)
-	return claimsUserId == ctx.User.Id &&
+	claimsUserID, _ := claims["user_id"].(string)
+	return claimsUserID == ctx.User.ID &&
 		claimsKey == ctx.User.EphemeralKey &&
 		claimsVersion == "1.0"
 
 }
 
-func InvalidSessionJWT(error uint32) func(*TestContext) bool {
-	return func(ctx *TestContext) bool {
+func InvalidSessionJWT(error uint32) func(*testContext) bool {
+	return func(ctx *testContext) bool {
 		_, err := jwt.Parse(ctx.User.SessionJWT, getKeyJWT(ctx.Key.X, ctx.Key.Y))
 		verr, ok := err.(*jwt.ValidationError)
 		return ok && (verr.Errors&error == error)
@@ -216,35 +216,35 @@ func TestRefresh(t *testing.T) {
 	cases := tests(
 		test("Good refresh call",
 			s("Use default user", DefaultUser),
-			s("Call refresh", CallRefresh),
-			s("Full JWT validation", ValidSessionJWT),
+			s("Call refresh", callRefresh),
+			s("Full JWT validation", validSessionJWT),
 		),
 		test("JWT bad key",
 			s("Alter context key", AlterKey),
 			s("Use default user", DefaultUser),
-			s("Call refresh", CallRefresh),
+			s("Call refresh", callRefresh),
 			s("Check invalid signature", InvalidSessionJWT(jwt.ValidationErrorSignatureInvalid)),
 		),
 		test("Expired JWT",
 			s("Default user", DefaultUser),
-			s("Time travel", TimeTravel),
-			s("Call refresh", CallRefresh),
+			s("Time travel", timeTravel),
+			s("Call refresh", callRefresh),
 			s("Check expired token", InvalidSessionJWT(jwt.ValidationErrorExpired)),
 		),
 		test("Unknown user",
 			s("Unknown user", InvalidUser),
-			s("Call refresh", CallRefresh),
+			s("Call refresh", callRefresh),
 			s("Nil token", InvalidSessionJWT(jwt.ValidationErrorMalformed)),
 		),
 		test("Ephemeral Key all lower case",
 			s("Use default user", UserWithKey("aaaaaaaaaabbbbbbbbbbccccccccccddddddddddaaaaaaaaaabbbbbbbbbbcccccc")),
-			s("Call refresh", CallRefresh),
-			s("Full JWT validation", ValidSessionJWT),
+			s("Call refresh", callRefresh),
+			s("Full JWT validation", validSessionJWT),
 		),
 		test("Ephemeral Key with all upper case",
 			s("Use default user", UserWithKey("AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDDAAAAAAAAAABBBBBBBBBBCCCCCC")),
-			s("Call refresh", CallRefresh),
-			s("Full JWT validation", ValidSessionJWT),
+			s("Call refresh", callRefresh),
+			s("Full JWT validation", validSessionJWT),
 		),
 	)
 

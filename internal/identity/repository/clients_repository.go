@@ -14,19 +14,19 @@ type ClientData struct {
 	LoginURL   string `json:"login_url"`
 	LogoutURL  string `json:"logout_url"`
 	Domain     string `json:"domain"`
-	Id         string `json:"id"`
+	ID         string `json:"id"`
 	ExternalID string `json:"external_id"`
 }
 
 func (cd *ClientData) GetFullLoginURL() string {
-	return cd.buildUrl(cd.LoginURL)
+	return cd.buildURL(cd.LoginURL)
 }
 
 func (cd *ClientData) GetFullLogoutURL() string {
-	return cd.buildUrl(cd.LogoutURL)
+	return cd.buildURL(cd.LogoutURL)
 }
 
-func (cd *ClientData) buildUrl(relPath string) string {
+func (cd *ClientData) buildURL(relPath string) string {
 	if len(relPath) == 0 {
 		return cd.Domain
 	}
@@ -37,17 +37,17 @@ func (cd *ClientData) buildUrl(relPath string) string {
 }
 
 type ClientRepository interface {
-	GetById(clientId string) (*ClientData, error)
+	GetByID(clientID string) (*ClientData, error)
 	GetByDomain(domain string) (*ClientData, error)
 }
 
 type clientRepoImpl struct {
-	idIndex     map[string]ClientData
+	IDIndex     map[string]ClientData
 	domainIndex map[string]ClientData
 }
 
-func (c *clientRepoImpl) GetById(clientId string) (*ClientData, error) {
-	return doQuery(clientId, c.idIndex)
+func (c *clientRepoImpl) GetByID(clientID string) (*ClientData, error) {
+	return doQuery(clientID, c.IDIndex)
 }
 
 func (c *clientRepoImpl) GetByDomain(domain string) (*ClientData, error) {
@@ -65,7 +65,6 @@ func doQuery(key string, index map[string]ClientData) (*ClientData, error) {
 }
 
 func NewClientRepository(dataPath string) (ClientRepository, error) {
-
 	data, err := readClientData(dataPath)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to read client data from file: %s", dataPath)
@@ -75,21 +74,21 @@ func NewClientRepository(dataPath string) (ClientRepository, error) {
 	domains := make(map[string]ClientData)
 
 	for _, c := range data {
-		log.Debugf("Loading data for Domain: %s  Id: %s", c.Domain, c.Id)
-		if _, ok := ids[c.Id]; !ok {
-			ids[c.Id] = c
+		log.Debugf("Loading data for Domain: %s  Id: %s", c.Domain, c.ID)
+		if _, ok := ids[c.ID]; !ok {
+			ids[c.ID] = c
 		} else {
-			log.Warnf("Duplicate ClientID: %s", c.Id)
+			log.Warnf("Duplicate ClientID: %s", c.ID)
 		}
 
 		if _, ok := ids[c.Domain]; !ok {
 			domains[c.Domain] = c
 		} else {
-			log.Warnf("Duplicate Domain: %s", c.Id)
+			log.Warnf("Duplicate Domain: %s", c.ID)
 		}
 	}
 
-	return &clientRepoImpl{idIndex: ids, domainIndex: domains}, nil
+	return &clientRepoImpl{IDIndex: ids, domainIndex: domains}, nil
 }
 
 func readClientData(dataPath string) ([]ClientData, error) {
