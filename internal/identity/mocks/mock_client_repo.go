@@ -47,15 +47,15 @@ func (mr *MockClientRepositoryMockRecorder) GetByDomain(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByDomain", reflect.TypeOf((*MockClientRepository)(nil).GetByDomain), arg0)
 }
 
-// GetById mocks base method
-func (m *MockClientRepository) GetById(arg0 string) (*repository.ClientData, error) {
-	ret := m.ctrl.Call(m, "GetById", arg0)
+// GetByID mocks base method
+func (m *MockClientRepository) GetByID(arg0 string) (*repository.ClientData, error) {
+	ret := m.ctrl.Call(m, "GetByID", arg0)
 	ret0, _ := ret[0].(*repository.ClientData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetById indicates an expected call of GetById
-func (mr *MockClientRepositoryMockRecorder) GetById(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockClientRepository)(nil).GetById), arg0)
+// GetByID indicates an expected call of GetByID
+func (mr *MockClientRepositoryMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockClientRepository)(nil).GetByID), arg0)
 }

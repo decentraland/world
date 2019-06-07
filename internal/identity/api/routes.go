@@ -9,9 +9,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/decentraland/world/internal/commons/token"
 	"github.com/decentraland/world/internal/commons/utils"
-	"github.com/decentraland/world/internal/gindcl"
 	"github.com/decentraland/world/internal/identity/data"
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/gin-gonic/gin"
@@ -19,32 +17,33 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
-type Application struct {
+type application struct {
 	auth0            data.IAuth0Service
 	redirectURL      string
-	generator        *token.Generator // Signs jwt, maybe should update name?s
+	generator        *utils.TokenGenerator // Signs jwt, maybe should update name?s
 	pubkey           string
 	serverURL        string
 	clientRepository repository.ClientRepository
 	validator        *validator.Validate
 }
 
-type TokenRequest struct {
+type tokenRequest struct {
 	UserToken string `json:"user_token" validate:"required"`
 	PublicKey string `json:"pub_key" validate:"required"`
 }
 
-type AuthRequest struct {
+type authRequest struct {
 	Domain    string `json:"domain" validate:"required"`
 	LoginURL  string `json:"login_callback" validate:"required"`
 	LogoutURL string `json:"logout_callback" validate:"required"`
 }
 
-type AuthResponse struct {
+type authResponse struct {
 	LoginURL  string `json:"login_url"`
 	LogoutURL string `json:"logout_url"`
 }
 
+// Config is the API config
 type Config struct {
 	Auth0Service     data.IAuth0Service
 	Key              *ecdsa.PrivateKey
@@ -53,17 +52,18 @@ type Config struct {
 	JWTDuration      time.Duration
 }
 
-func InitApi(router *gin.Engine, config *Config) error {
-	generator := token.New(config.Key, "1.0", config.JWTDuration)
+// InitAPI initializes api routes
+func InitAPI(router *gin.Engine, config *Config) error {
+	generator := utils.NewTokenGenerator(config.Key, "1.0", config.JWTDuration)
 
 	publicKey, err := utils.PemEncodePublicKey(&config.Key.PublicKey)
 	if err != nil {
 		return err
 	}
 
-	router.Use(gindcl.CorsMiddleware())
+	router.Use(utils.CorsMiddleware())
 
-	app := &Application{
+	app := &application{
 		auth0:            config.Auth0Service,
 		generator:        generator,
 		pubkey:           publicKey,
@@ -82,23 +82,23 @@ func InitApi(router *gin.Engine, config *Config) error {
 	v1.POST("/token", app.token)
 
 	// Handle pre-flight checks one by one
-	v1.OPTIONS("/public_key", gindcl.PrefligthChecksMiddleware("GET", "*"))
-	v1.OPTIONS("/auth", gindcl.PrefligthChecksMiddleware("POST", "*"))
-	v1.OPTIONS("/token", gindcl.PrefligthChecksMiddleware("POST", "*"))
+	v1.OPTIONS("/public_key", utils.PrefligthChecksMiddleware("GET", "*"))
+	v1.OPTIONS("/auth", utils.PrefligthChecksMiddleware("POST", "*"))
+	v1.OPTIONS("/token", utils.PrefligthChecksMiddleware("POST", "*"))
 
 	return nil
 }
 
-func (a *Application) status(c *gin.Context) {
+func (a *application) status(c *gin.Context) {
 	c.String(http.StatusOK, "available")
 }
 
-func (a *Application) publicKey(c *gin.Context) {
+func (a *application) publicKey(c *gin.Context) {
 	c.String(http.StatusOK, a.pubkey)
 }
 
-func (a *Application) authData(c *gin.Context) {
-	var req AuthRequest
+func (a *application) authData(c *gin.Context) {
+	var req authRequest
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -110,17 +110,29 @@ func (a *Application) authData(c *gin.Context) {
 		return
 	}
 
-	response, err := getAuthData(a.clientRepository, req, a.serverURL)
+	client, err := a.clientRepository.GetByDomain(req.Domain)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		log.WithError(err).Error("Error retrieving client data by domain")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": errors.New("Error retrieving data")})
 		return
+	}
+
+	if client.LogoutURL != req.LogoutURL || client.LoginURL != req.LoginURL {
+		log.Error("Provided data do no match")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": errors.New("Provided data do no match")})
+		return
+	}
+
+	response := &authResponse{
+		LoginURL:  buildURL(a.serverURL, "/login/%s", client.ID),
+		LogoutURL: buildURL(a.serverURL, "/logout/%s", client.ID),
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-func (a *Application) token(c *gin.Context) {
-	var params TokenRequest
+func (a *application) token(c *gin.Context) {
+	var params tokenRequest
 	err := c.ShouldBindJSON(&params)
 
 	if err != nil {
@@ -140,7 +152,7 @@ func (a *Application) token(c *gin.Context) {
 		return
 	}
 
-	token, err := a.generator.NewToken(user.UserId, params.PublicKey)
+	token, err := a.generator.NewToken(user.UserID, params.PublicKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "error signing token")
 		return
@@ -149,27 +161,9 @@ func (a *Application) token(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"access_token": token})
 }
 
-func buildUrl(basePath string, relPath string, args ...interface{}) string {
+func buildURL(basePath string, relPath string, args ...interface{}) string {
 	u, _ := url.Parse(basePath)
 	u.Path = path.Join(u.Path, fmt.Sprintf(relPath, args...))
 	urlResult, _ := url.PathUnescape(u.String())
 	return urlResult
-}
-
-func getAuthData(clientRepository repository.ClientRepository, req AuthRequest, serverURL string) (*AuthResponse, error) {
-	client, err := clientRepository.GetByDomain(req.Domain)
-	if err != nil {
-		log.WithError(err).Error("Error retrieving client data by domain")
-		return nil, err
-	}
-
-	if client.LogoutURL != req.LogoutURL || client.LoginURL != req.LoginURL {
-		log.Error("Provided data do no match")
-		return nil, errors.New("provided data do no match")
-	}
-
-	return &AuthResponse{
-		LoginURL:  buildUrl(serverURL, "/login/%s", client.Id),
-		LogoutURL: buildUrl(serverURL, "/logout/%s", client.Id),
-	}, nil
 }

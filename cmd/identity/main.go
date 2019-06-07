@@ -18,25 +18,25 @@ import (
 	ginlogrus "github.com/toorop/gin-logrus"
 )
 
-type Auth0Config struct {
+type auth0Config struct {
 	BaseURL string `overwrite-flag:"auth0BaseURL"`
 	Domain  string `overwrite-flag:"auth0Domain"`
 }
 
-type identityConf struct {
-	Auth0           Auth0Config
-	LogLevel        string `overwrite-flag:"logLevel"`
-	JwtDuration     time.Duration
-	ClientsDataPath string `overwrite-flag:"clientsDataPath"`
-	Server          Server
-	PrivateKeyPath  string `overwrite-flag:"privateKeyPath" validate:"required"`
-	MetricsConfig   metricsConfig
-}
-
-type Server struct {
+type server struct {
 	Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 	Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 	PublicURL string `overwrite-flag:"publicURL" validate:"required"`
+}
+
+type identityConf struct {
+	LogLevel        string `overwrite-flag:"logLevel"`
+	ClientsDataPath string `overwrite-flag:"clientsDataPath"`
+	PrivateKeyPath  string `overwrite-flag:"privateKeyPath" validate:"required"`
+	JwtDuration     time.Duration
+	Auth0           auth0Config
+	Server          server
+	MetricsConfig   metricsConfig
 }
 
 type metricsConfig struct {
@@ -97,7 +97,7 @@ func main() {
 		defer metrics.StopMetrics()
 	}
 
-	if err := api.InitApi(router, &config); err != nil {
+	if err := api.InitAPI(router, &config); err != nil {
 		log.WithError(err).Fatal("Fail to initialize routes")
 	}
 

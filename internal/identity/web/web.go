@@ -35,15 +35,14 @@ type application struct {
 }
 
 func (app *application) login(c *gin.Context) {
+	clientID := c.Param("clientId")
 
-	clientId := c.Param("clientId")
-
-	if client, err := app.clientRepo.GetById(clientId); err != nil {
-		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientId)
+	if client, err := app.clientRepo.GetByID(clientID); err != nil {
+		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientID)
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		callbackURL := fmt.Sprintf("%slogin_callback?clientId=%s", app.serverURL, clientId)
+		callbackURL := fmt.Sprintf("%slogin_callback?clientId=%s", app.serverURL, clientID)
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "login.html", gin.H{
 			"callbackUrl": callbackURL,
@@ -64,15 +63,15 @@ func (app *application) loginCallback(c *gin.Context) {
 		return
 	}
 
-	clientId := data[0]
+	clientID := data[0]
 
-	if client, err := app.clientRepo.GetById(clientId); err != nil {
-		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientId)
+	if client, err := app.clientRepo.GetByID(clientID); err != nil {
+		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientID)
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
-		callbackURL := fmt.Sprintf("%s?clientId=%s", app.serverURL, clientId)
+		callbackURL := fmt.Sprintf("%s?clientId=%s", app.serverURL, clientID)
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "loginCallback.html", gin.H{
 			"callbackUrl": callbackURL,
@@ -86,15 +85,14 @@ func (app *application) loginCallback(c *gin.Context) {
 }
 
 func (app *application) logout(c *gin.Context) {
+	clientID := c.Param("clientId")
 
-	clientId := c.Param("clientId")
-
-	if client, err := app.clientRepo.GetById(clientId); err != nil {
-		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientId)
+	if client, err := app.clientRepo.GetByID(clientID); err != nil {
+		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientID)
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		callbackURL := fmt.Sprintf("%slogout_callback?clientId=%s", app.serverURL, clientId)
+		callbackURL := fmt.Sprintf("%slogout_callback?clientId=%s", app.serverURL, clientID)
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "logout.html", gin.H{
 			"callbackUrl": callbackURL,
@@ -105,7 +103,6 @@ func (app *application) logout(c *gin.Context) {
 }
 
 func (app *application) logoutCallback(c *gin.Context) {
-
 	params := c.Request.URL.Query()
 
 	data, ok := params["clientId"]
@@ -115,10 +112,10 @@ func (app *application) logoutCallback(c *gin.Context) {
 		return
 	}
 
-	clientId := data[0]
+	clientID := data[0]
 
-	if client, err := app.clientRepo.GetById(clientId); err != nil {
-		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientId)
+	if client, err := app.clientRepo.GetByID(clientID); err != nil {
+		log.WithError(err).Errorf("Failed to retrieve client by id[%s]", clientID)
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {

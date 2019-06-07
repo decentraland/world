@@ -14,11 +14,11 @@ import (
 type U struct {
 	Token        string
 	Email        string
-	Id           string
+	ID           string
 	EphemeralKey string
 }
 
-func (u U) gen() *TestUser {
+func (u U) gen() *testUser {
 	setProp := func(prop *string, value string) {
 		if value != "" {
 			*prop = value
@@ -28,28 +28,33 @@ func (u U) gen() *TestUser {
 		}
 	}
 
-	user := ValidUser()
+	user := validUser()
 	setProp(&user.Token, u.Token)
-	setProp(&user.Id, u.Id)
+	setProp(&user.ID, u.ID)
 	setProp(&user.Email, u.Email)
 	setProp(&user.EphemeralKey, u.EphemeralKey)
 	return &user
 }
 
-type TestUser struct {
+type testUser struct {
 	Token        string
 	Email        string
-	Id           string
+	ID           string
 	EphemeralKey string
 	SessionJWT   string
 }
 
-func (u *TestUser) User() data.User {
-	return data.User{Email: u.Email, UserId: u.Id}
+func (u *testUser) User() data.User {
+	return data.User{Email: u.Email, UserID: u.ID}
 }
 
-func ValidUser() TestUser {
-	return TestUser{Token: "valid_user_token", Email: "valid_user_name", Id: "valid_user_id", EphemeralKey: "0304f7febb7837fa61ba07ccadcc470997063d5a6962f6d9651ece233f9acf6655"}
+func validUser() testUser {
+	return testUser{
+		Token:        "valid_user_token",
+		Email:        "valid_user_name",
+		ID:           "valid_user_id",
+		EphemeralKey: "0304f7febb7837fa61ba07ccadcc470997063d5a6962f6d9651ece233f9acf6655",
+	}
 }
 
 func getJSONValue(data []byte, path string) string {

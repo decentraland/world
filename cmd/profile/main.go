@@ -4,11 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/decentraland/world/internal/commons/auth"
+	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/metrics"
-
-	"github.com/decentraland/world/internal/auth"
-	configuration "github.com/decentraland/world/internal/commons/config"
-	"github.com/decentraland/world/internal/gindcl"
+	"github.com/decentraland/world/internal/commons/utils"
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -43,7 +42,7 @@ func main() {
 	router.Use(ginlogrus.Logger(log), gin.Recovery())
 
 	var conf profileConfig
-	if err := configuration.ReadConfiguration("config/profile/config", &conf); err != nil {
+	if err := config.ReadConfiguration("config/profile/config", &conf); err != nil {
 		log.Fatal(err)
 	}
 
@@ -63,7 +62,7 @@ func main() {
 		defer metrics.StopMetrics()
 	}
 
-	router.Use(gindcl.CorsMiddleware())
+	router.Use(utils.CorsMiddleware())
 
 	authMiddleware, err := auth.NewAuthMiddleware(&auth.MiddlewareConfiguration{
 		AuthServerURL: conf.Auth.AuthServerURL,

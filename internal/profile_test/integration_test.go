@@ -23,7 +23,7 @@ import (
 	"database/sql"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
-	"github.com/decentraland/world/internal/auth"
+	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/profile"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"

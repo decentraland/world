@@ -1,4 +1,4 @@
-package gindcl
+package utils
 
 import (
 	"net/http"
