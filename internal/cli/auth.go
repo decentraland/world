@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"time"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
@@ -65,8 +66,8 @@ func (a *Auth0) GetUserToken() (string, error) {
 }
 
 type Auth struct {
-	AuthURL string
-	PubKey  string
+	IdentityURL string
+	PubKey      string
 }
 
 func (a *Auth) GetAccessToken(userToken string) (string, error) {
@@ -79,8 +80,14 @@ func (a *Auth) GetAccessToken(userToken string) (string, error) {
 		"pub_key":    a.PubKey,
 	})
 
-	postTokenURL := fmt.Sprintf("%s/api/v1/token", a.AuthURL)
-	resp, err := c.Post(postTokenURL, "application/json", bytes.NewReader(jsonBuff))
+	postTokenURL, err := url.Parse(a.IdentityURL)
+	if err != nil {
+		return "", err
+	}
+
+	postTokenURL.Path = path.Join(postTokenURL.Path, "/api/v1/token")
+
+	resp, err := c.Post(postTokenURL.String(), "application/json", bytes.NewReader(jsonBuff))
 	if err != nil {
 		return "", err
 	}
@@ -92,14 +99,16 @@ func (a *Auth) GetAccessToken(userToken string) (string, error) {
 		return "", err
 	}
 
-	response := make(map[string]interface{})
-	if err := json.Unmarshal(respBuff, &response); err != nil {
+	if resp.StatusCode != http.StatusOK {
+		response := make(map[string]string)
+		json.Unmarshal(respBuff, &response)
+		err := fmt.Errorf("http error %s %s %d, %s", postTokenURL, resp.Status, resp.StatusCode,
+			response["error"])
 		return "", err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("http error %s %s %d, %s", postTokenURL, resp.Status, resp.StatusCode,
-			response["error"])
+	response := make(map[string]interface{})
+	if err := json.Unmarshal(respBuff, &response); err != nil {
 		return "", err
 	}
 

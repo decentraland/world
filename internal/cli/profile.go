@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
 	"time"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
@@ -17,8 +19,13 @@ type ProfileClient struct {
 }
 
 func (pc *ProfileClient) StoreProfile(accessToken string, body io.Reader) error {
-	u := fmt.Sprintf("%s/api/v1/profile", pc.ProfileURL)
-	req, err := http.NewRequest("POST", u, body)
+	u, err := url.Parse(pc.ProfileURL)
+	if err != nil {
+		return err
+	}
+
+	u.Path = path.Join(u.Path, "/api/v1/profile")
+	req, err := http.NewRequest("POST", u.String(), body)
 	if err != nil {
 		return err
 	}
@@ -57,8 +64,13 @@ func (pc *ProfileClient) StoreProfile(accessToken string, body io.Reader) error 
 }
 
 func (pc *ProfileClient) RetrieveProfile(accessToken string) (map[string]interface{}, error) {
-	u := fmt.Sprintf("%s/api/v1/profile", pc.ProfileURL)
-	req, err := http.NewRequest("GET", u, nil)
+	u, err := url.Parse(pc.ProfileURL)
+	if err != nil {
+		return nil, err
+	}
+
+	u.Path = path.Join(u.Path, "/api/v1/profile")
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

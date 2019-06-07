@@ -21,8 +21,7 @@ import (
 type rootConfig struct {
 	IdentityURL string `overwrite-flag:"publicURL" validate:"required"`
 	Auth0       struct {
-		BaseURL string `overwrite-flag:"auth0BaseURL"`
-		Domain  string `overwrite-flag:"auth0Domain"`
+		Domain string `overwrite-flag:"auth0Domain"`
 	}
 	Identity struct {
 		Host            string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
@@ -50,8 +49,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(conf.Identity.Metrics)
-
 	if err := logging.SetLevel(l, conf.Identity.LogLevel); err != nil {
 		log.WithError(err).Fatal("Fail to start server")
 	}
@@ -63,8 +60,7 @@ func main() {
 	}
 
 	auth0, err := data.MakeAuth0Service(data.Auth0Config{
-		BaseURL: conf.Auth0.BaseURL,
-		Domain:  conf.Auth0.BaseURL,
+		Domain: conf.Auth0.Domain,
 	})
 	if err != nil {
 		log.WithError(err).Fatal("Fail to initialize Auth0 Client")

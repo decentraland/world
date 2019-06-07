@@ -85,6 +85,7 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 		credentials["x-auth-type"] = "third-party"
 		credentials["x-access-token"] = qs.Get("access-token")
 
+		fmt.Println("*******AUTH FROM URL")
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte{}}
 		return a.provider.ApproveRequest(&req)
 	} else {
