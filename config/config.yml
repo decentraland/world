@@ -19,7 +19,7 @@ identity:
     logLevel: 'debug'
     jwtDuration: 60
     clientsDataPath: 'config/identity/enabledClients.json'
-    privateKeyPath: "config/identity/defaultKeys/demoPrivate.key"
+    privateKeyPath: "config/identity/devKeys/demoPrivate.key"
     metrics:
         enabled: false
         traceName: 'identityService'
