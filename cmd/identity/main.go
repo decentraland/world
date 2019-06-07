@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/decentraland/world/internal/commons/metrics"
 	"time"
+
+	"github.com/decentraland/world/internal/commons/metrics"
 
 	configuration "github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"

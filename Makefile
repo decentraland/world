@@ -10,6 +10,7 @@ build:
 buildall: build
 	go build -o build/cli_bot ./cmd/cli/bot
 	go build -o build/cli_keygen ./cmd/cli/keygen
+	go build -o build/cli_profile ./cmd/cli/profile
 
 fmt:
 	gofmt -w .

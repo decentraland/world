@@ -113,7 +113,7 @@ func Register(config *Config, router gin.IRouter) error {
 		result, err := schema.Validate(documentLoader)
 		if err != nil {
 			log.WithError(err).Error("json validation failed")
-			c.JSON(http.StatusInternalServerError, internalError)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err})
 			return
 		}
 
