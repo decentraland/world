@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 
@@ -9,50 +8,54 @@ import (
 	"strings"
 
 	"github.com/decentraland/world/internal/cli"
+	"github.com/decentraland/world/internal/commons/config"
 )
 
+type rootConfig struct {
+	IdentityURL string `overwrite-flag:"authURL" validate:"required"`
+	ProfileURL  string `overwrite-flag:"profileURL" validate:"required"`
+	Auth0       struct {
+		Domain string `overwrite-flag:"auth0Domain" validate:"required"`
+	}
+	Cli struct {
+		Store             bool   `overwrite-flag:"store"`
+		Retrieve          bool   `overwrite-flag:"retrieve"`
+		Auth0ClientID     string `overwrite-flag:"auth0ClientID" validate:"required"`
+		Auth0Audience     string `overwrite-flag:"auth0Audience" validate:"required"`
+		Auth0ClientSecret string `overwrite-flag:"auth0ClientSecret" validate:"required"`
+		Email             string `overwrite-flag:"email" validate:"required"`
+		Password          string `overwrite-flag:"password" validate:"required"`
+		KeyPath           string `overwrite-flag:"keyPath" validate:"required"`
+	}
+}
+
 func main() {
-	authURL := flag.String("authURL", "http://localhost:9001", "")
-	profileURL := flag.String("profileURL", "http://localhost:9002", "")
+	var conf rootConfig
+	if err := config.ReadConfiguration("config/config", &conf); err != nil {
+		log.Fatal(err)
+	}
 
-	email := flag.String("email", "", "")
-	password := flag.String("password", "", "")
-	auth0Domain := flag.String("auth0Domain", "", "")
-	keyPath := flag.String("keyPath", "", "")
-	auth0ClientID := flag.String("auth0ClientID", "", "")
-	auth0ClientSecret := flag.String("auth0ClientSecret", "", "")
-	auth0Audience := flag.String("auth0Audience", "", "")
-
-	store := flag.Bool("store", false, "")
-	retrieve := flag.Bool("retrieve", false, "")
-	flag.Parse()
-
-	// TODO: command line validations
-	// if *email == "" || *password == "" || *auth0Domain == "" {
-	// 	log.Fatal("--email, --password, --auth0Domain is required")
-	// }
-
-	if *store == *retrieve {
+	if conf.Cli.Store == conf.Cli.Retrieve {
 		log.Fatal("please specify --store or --retrieve")
 	}
 
-	ephemeralKey, err := cli.ReadEphemeralKeyFromFile(*keyPath)
+	ephemeralKey, err := cli.ReadEphemeralKeyFromFile(conf.Cli.KeyPath)
 	if err != nil {
 		log.Fatalf("error loading ephemeral key: %v", err)
 	}
 
 	auth0 := cli.Auth0{
-		Domain:       *auth0Domain,
-		ClientID:     *auth0ClientID,
-		ClientSecret: *auth0ClientSecret,
-		Audience:     *auth0Audience,
-		Email:        *email,
-		Password:     *password,
+		Domain:       conf.Auth0.Domain,
+		ClientID:     conf.Cli.Auth0ClientID,
+		ClientSecret: conf.Cli.Auth0ClientSecret,
+		Audience:     conf.Cli.Auth0Audience,
+		Email:        conf.Cli.Email,
+		Password:     conf.Cli.Password,
 	}
 
 	auth := cli.Auth{
-		AuthURL: *authURL,
-		PubKey:  cli.EncodePublicKey(ephemeralKey),
+		IdentityURL: conf.IdentityURL,
+		PubKey:      cli.EncodePublicKey(ephemeralKey),
 	}
 
 	accessToken, err := cli.ExecuteAuthFlow(&auth0, &auth)
@@ -61,11 +64,11 @@ func main() {
 	}
 
 	client := cli.ProfileClient{
-		ProfileURL:   *profileURL,
+		ProfileURL:   conf.ProfileURL,
 		EphemeralKey: ephemeralKey,
 	}
 
-	if *retrieve {
+	if conf.Cli.Retrieve {
 		profile, err := client.RetrieveProfile(accessToken)
 		if err != nil {
 			log.Fatalf("error retrieving profile: %v", err)

@@ -9,32 +9,30 @@ import (
 	"github.com/decentraland/world/internal/commons/logging"
 )
 
-type authConfiguration struct {
-	ServerSecret string `overwrite-flag:"serverSecret"`
-	AuthURL      string `overwrite-flag:"authURL" flag-usage:"identity service public key url"`
-	RequestTTL   int64  `overwrite-flag:"authTtl" flag-usage:"request time to live"`
-}
-
-type commServerConfig struct {
-	CoordinatorURL string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
-	Version        string `overwrite-flag:"version"`
-	LogLevel       string `overwrite-flag:"logLevel"`
-	Auth           authConfiguration
+type rootConfig struct {
+	IdentityPubKeyURL string `overwrite-flag:"authURL" validate:"required"`
+	CoordinatorURL    string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
+	CommServer        struct {
+		Version      string `overwrite-flag:"version"`
+		LogLevel     string `overwrite-flag:"logLevel"`
+		ServerSecret string `overwrite-flag:"serverSecret"`
+		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+	}
 }
 
 func main() {
 	log := logging.New()
 	defer logging.LogPanic()
 
-	var conf commServerConfig
-	if err := config.ReadConfiguration("config/comms/config", &conf); err != nil {
+	var conf rootConfig
+	if err := config.ReadConfiguration("config/config", &conf); err != nil {
 		log.Fatal(err)
 	}
 
 	serverAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
-		Secret:     conf.Auth.ServerSecret,
-		AuthURL:    conf.Auth.AuthURL,
-		RequestTTL: conf.Auth.RequestTTL,
+		AuthURL:    conf.IdentityPubKeyURL,
+		Secret:     conf.CommServer.ServerSecret,
+		RequestTTL: conf.CommServer.AuthTTL,
 	})
 
 	if err != nil {
@@ -52,7 +50,7 @@ func main() {
 		CoordinatorURL: fmt.Sprintf("%s/discover", conf.CoordinatorURL),
 	}
 
-	if err := logging.SetLevel(log, conf.LogLevel); err != nil {
+	if err := logging.SetLevel(log, conf.CommServer.LogLevel); err != nil {
 		log.Fatal("error setting log level")
 	}
 
@@ -61,7 +59,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Infof("starting communication server - version: %s", conf.Version)
+	log.Infof("starting communication server - version: %s", conf.CommServer.Version)
 
 	if err := commserver.ConnectCoordinator(state); err != nil {
 		log.Fatal("connect coordinator failure ", err)

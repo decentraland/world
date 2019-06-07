@@ -14,8 +14,7 @@ const (
 )
 
 type Auth0Config struct {
-	BaseURL string
-	Domain  string
+	Domain string
 }
 
 type User struct {
@@ -33,7 +32,7 @@ type Auth0Service struct {
 }
 
 func MakeAuth0Service(config Auth0Config) (IAuth0Service, error) {
-	u, err := url.Parse(config.BaseURL)
+	u, err := url.Parse(fmt.Sprintf("https://%s", config.Domain))
 	if err != nil {
 		return nil, err
 	}

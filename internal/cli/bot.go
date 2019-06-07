@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"net/url"
+	"path"
 	"time"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
@@ -104,7 +105,7 @@ func encodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
 }
 
 type ClientAuthenticator struct {
-	AuthURL      string
+	IdentityURL  string
 	EphemeralKey *ephemeral.EphemeralKey
 
 	Email    string
@@ -127,8 +128,8 @@ func (a *ClientAuthenticator) getAccessToken() (string, error) {
 	}
 
 	auth := Auth{
-		AuthURL: a.AuthURL,
-		PubKey:  EncodePublicKey(a.EphemeralKey),
+		IdentityURL: a.IdentityURL,
+		PubKey:      EncodePublicKey(a.EphemeralKey),
 	}
 
 	return ExecuteAuthFlow(&auth0, &auth)
@@ -170,6 +171,7 @@ func (a *ClientAuthenticator) GenerateClientAuthMessage() (*brokerProtocol.AuthM
 
 func (a *ClientAuthenticator) GenerateClientConnectURL(coordinatorURL string) (string, error) {
 	u, err := url.Parse(coordinatorURL)
+	u.Path = path.Join(u.Path, "/connect")
 	if err != nil {
 		return "", nil
 	}
@@ -218,6 +220,7 @@ func StartBot(options *BotOptions) {
 	}
 
 	peerID := ksuid.New().String()
+	fmt.Println("XXX", options.CoordinatorURL)
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,

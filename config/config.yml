@@ -1,0 +1,47 @@
+identityURL: "http://identity:9001"
+identityPubKeyURL: "http://identity:9001/api/v1/public_key"
+profileURL:  "http://profile:9002"
+coordinatorURL: "ws://coordinator:9000"
+
+auth0:
+  domain:   'dcl-test.auth0.com'
+
+coordinator:
+    host: 'localhost'
+    port: 9000
+    logLevel: 'debug'
+    authTTL: 60
+    serverSecret: "123456"
+
+identity:
+    host: 'localhost'
+    port: 9001
+    logLevel: 'debug'
+    jwtDuration: 60
+    clientsDataPath: 'config/identity/enabledClients.json'
+    privateKeyPath: "config/identity/defaultKeys/demoPrivate.key"
+    metrics:
+        enabled: false
+        traceName: 'identityService'
+        analyticsRateEnabled: false
+
+profile:
+    host: 'localhost'
+    port: 9002
+    logLevel: 'debug'
+    connStr: ""
+    schemaDir: "pkg/profile"
+    authTTL: 60
+    metrics:
+        enabled: false
+        traceName: 'profileService'
+        analyticsRateEnabled: false
+
+commserver:
+    logLevel: 'debug'
+    authTTL: 60
+    serverSecret: "123456"
+
+cli:
+  auth0ClientID: lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx
+  auth0Audience: decentraland.org
