@@ -1,0 +1,44 @@
+identityURL: "http://localhost:9001/"
+identityPubKeyURL: "http://localhost:9001/api/v1/public_key"
+profileURL:  "http://localhost:9002/"
+coordinatorURL: "ws://localhost:9000"
+
+auth0:
+  baseURL:  'https://dcl-test.auth0.com'
+  domain:   'dcl-test.auth0.com'
+
+coordinator:
+    host: 'localhost'
+    port: 9000
+    logLevel: 'info'
+    authTTL: 60
+    serverSecret: "123456"
+
+identity:
+    host: 'localhost'
+    port: 9001
+    logLevel: 'info'
+    jwtDuration: 60
+    clientsDataPath: 'config/identity/enabledClients.json'
+    privateKeyPath: "config/identity/defaultKeys/demoPrivate.key"
+    metrics:
+        enabled: false
+        traceName: 'identityService'
+        analyticsRateEnabled: false
+
+profile:
+    host: 'localhost'
+    port: 9002
+    logLevel: 'info'
+    connStr: ""
+    schemaDir: "pkg/profile"
+    authTTL: 60
+    metrics:
+        enabled: false
+        traceName: 'profileService'
+        analyticsRateEnabled: false
+
+commserver:
+    logLevel: 'info'
+    authTTL: 60
+    serverSecret: "123456"
