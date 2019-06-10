@@ -65,7 +65,7 @@ Returns a json with the following schema:
 
 This component is in charge of relaying information between clients. We use it to sends positions, public chat and other kinds of messages to nearby users.
 
-It has two sub components: a coordinator and a set of communication servers. We use [https://github.com/decentraland/webrtc-broker](webrtc-broker library) for this work. Here is an extract from the library's doc:
+It has two sub components: a coordinator and a set of communication servers. We use [webrtc-broker library](https://github.com/decentraland/webrtc-broker) for this work. Here is an extract from the library's doc:
 
 ### Components
 
