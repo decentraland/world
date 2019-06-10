@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Setting clients data..."
-echo -e ${CONFIG_SERVICE_JSON} | sed 's/\\//g' > ${CLIENTS_DATA_PATH}
+echo -e ${CONFIG_SERVICE_JSON} | base64 --decode > ${CLIENTS_DATA_PATH}
 cat ${CLIENTS_DATA_PATH}
 echo "...Done"
 
