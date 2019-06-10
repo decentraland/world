@@ -19,11 +19,11 @@ import (
 )
 
 type rootConfig struct {
-	IdentityURL string `overwrite-flag:"publicURL" validate:"required"`
-	Auth0       struct {
+	Auth0 struct {
 		Domain string `overwrite-flag:"auth0Domain"`
 	}
 	Identity struct {
+		PublicURL       string `overwrite-flag:"publicURL" validate:"required"`
 		Host            string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 		Port            int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 		LogLevel        string `overwrite-flag:"logLevel"`
@@ -75,7 +75,7 @@ func main() {
 		Auth0Service:     auth0,
 		Key:              key,
 		ClientRepository: repo,
-		ServerURL:        conf.IdentityURL,
+		ServerURL:        conf.Identity.PublicURL,
 		JWTDuration:      conf.Identity.JwtDuration,
 	}
 
@@ -94,7 +94,7 @@ func main() {
 		log.WithError(err).Fatal("Fail to initialize routes")
 	}
 
-	web.SiteContent(router, repo, conf.IdentityURL, conf.Auth0.Domain)
+	web.SiteContent(router, repo, conf.Identity.PublicURL, conf.Auth0.Domain)
 
 	addr := fmt.Sprintf("%s:%d", conf.Identity.Host, conf.Identity.Port)
 	if err := router.Run(addr); err != nil {

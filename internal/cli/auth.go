@@ -85,7 +85,7 @@ func (a *Auth) GetAccessToken(userToken string) (string, error) {
 		return "", err
 	}
 
-	postTokenURL.Path = path.Join(postTokenURL.Path, "/api/v1/token")
+	postTokenURL.Path = path.Join(postTokenURL.Path, "/token")
 
 	resp, err := c.Post(postTokenURL.String(), "application/json", bytes.NewReader(jsonBuff))
 	if err != nil {

@@ -17,9 +17,9 @@ import (
 )
 
 type rootConfig struct {
-	IdentityPubKeyURL string `overwrite-flag:"authURL" validate:"required"`
-	ProfileURL        string `overwrite-flag:"publicURL" flag-usage:"Example: http://yourDomain.com" validate:"required"`
-	Profile           struct {
+	IdentityURL string `overwrite-flag:"authURL" validate:"required"`
+	Profile     struct {
+		PublicURL string `overwrite-flag:"publicURL" flag-usage:"Example: http://yourDomain.com" validate:"required"`
 		Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 		Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 		LogLevel  string `overwrite-flag:"logLevel"`
@@ -68,9 +68,11 @@ func main() {
 	router.Use(utils.CorsMiddleware())
 
 	authMiddleware, err := auth.NewAuthMiddleware(&auth.MiddlewareConfiguration{
-		AuthServerURL: conf.IdentityPubKeyURL,
-		RequestTTL:    conf.Profile.AuthTTL,
-	}, conf.ProfileURL)
+		PublicURL:   conf.Profile.PublicURL,
+		IdentityURL: conf.IdentityURL,
+		RequestTTL:  conf.Profile.AuthTTL,
+		Log:         log,
+	})
 	if err != nil {
 		log.WithError(err).Fatal("error creating auth middleware")
 	}

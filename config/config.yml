@@ -1,6 +1,5 @@
-identityURL: "http://identity:9001"
-identityPubKeyURL: "http://identity:9001/api/v1/public_key"
-profileURL:  "http://profile:9002"
+identityURL: "http://identity:9001/api/v1"
+profileURL:  "http://profile:9002/api/v1"
 coordinatorURL: "ws://coordinator:9000"
 
 auth0:
@@ -14,6 +13,7 @@ coordinator:
     serverSecret: "123456"
 
 identity:
+    publicURL: "http://identity:9001"
     host: 'localhost'
     port: 9001
     logLevel: 'debug'
@@ -26,6 +26,7 @@ identity:
         analyticsRateEnabled: false
 
 profile:
+    publicURL:  "http://profile:9002"
     host: 'localhost'
     port: 9002
     logLevel: 'debug'

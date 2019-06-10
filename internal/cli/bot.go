@@ -220,7 +220,6 @@ func StartBot(options *BotOptions) {
 	}
 
 	peerID := ksuid.New().String()
-	fmt.Println("XXX", options.CoordinatorURL)
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,

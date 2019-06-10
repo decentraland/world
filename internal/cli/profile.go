@@ -24,7 +24,7 @@ func (pc *ProfileClient) StoreProfile(accessToken string, body io.Reader) error 
 		return err
 	}
 
-	u.Path = path.Join(u.Path, "/api/v1/profile")
+	u.Path = path.Join(u.Path, "/profile")
 	req, err := http.NewRequest("POST", u.String(), body)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (pc *ProfileClient) RetrieveProfile(accessToken string) (map[string]interfa
 		return nil, err
 	}
 
-	u.Path = path.Join(u.Path, "/api/v1/profile")
+	u.Path = path.Join(u.Path, "/profile")
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
