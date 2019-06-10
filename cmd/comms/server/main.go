@@ -10,9 +10,9 @@ import (
 )
 
 type rootConfig struct {
-	IdentityPubKeyURL string `overwrite-flag:"authURL" validate:"required"`
-	CoordinatorURL    string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
-	CommServer        struct {
+	IdentityURL    string `overwrite-flag:"authURL" validate:"required"`
+	CoordinatorURL string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
+	CommServer     struct {
 		Version      string `overwrite-flag:"version"`
 		LogLevel     string `overwrite-flag:"logLevel"`
 		ServerSecret string `overwrite-flag:"serverSecret"`
@@ -30,9 +30,9 @@ func main() {
 	}
 
 	serverAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
-		AuthURL:    conf.IdentityPubKeyURL,
-		Secret:     conf.CommServer.ServerSecret,
-		RequestTTL: conf.CommServer.AuthTTL,
+		IdentityURL: conf.IdentityURL,
+		Secret:      conf.CommServer.ServerSecret,
+		RequestTTL:  conf.CommServer.AuthTTL,
 	})
 
 	if err != nil {

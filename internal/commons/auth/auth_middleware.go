@@ -4,8 +4,11 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 
 	"github.com/decentraland/world/internal/commons/utils"
+	"github.com/sirupsen/logrus"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	"github.com/gin-gonic/gin"
@@ -13,22 +16,29 @@ import (
 )
 
 type MiddlewareConfiguration struct {
-	AuthServerURL string
-	RequestTTL    int64
+	IdentityURL string
+	PublicURL   string
+	RequestTTL  int64
+	Log         *logrus.Logger
 }
 
-func NewAuthMiddleware(c *MiddlewareConfiguration, publicURL string) (func(ctx *gin.Context), error) {
-	pubKey, err := utils.ReadRemotePublicKey(c.AuthServerURL)
+func NewAuthMiddleware(c *MiddlewareConfiguration) (func(ctx *gin.Context), error) {
+	u, err := url.Parse(c.IdentityURL)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read public key from '%s': %v", c.AuthServerURL, err)
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, "/public_key")
+	pubKey, err := utils.ReadRemotePublicKey(u.String())
+	if err != nil {
+		return nil, fmt.Errorf("cannot read public key from '%s': %v", u.String(), err)
 	}
 
-	return NewThirdPartyAuthMiddleware(pubKey, c.RequestTTL, publicURL)
+	return NewThirdPartyAuthMiddleware(pubKey, c)
 }
 
-func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTTL int64, publicURL string) (func(ctx *gin.Context), error) {
+func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, c *MiddlewareConfiguration) (func(ctx *gin.Context), error) {
 	authHandler, err := auth2.NewThirdPartyAuthProvider(&auth2.ThirdPartyProviderConfig{
-		RequestLifeSpan: reqTTL,
+		RequestLifeSpan: c.RequestTTL,
 		TrustedKey:      pubKey,
 	})
 	if err != nil {
@@ -39,13 +49,14 @@ func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, reqTTL int64, publicUR
 		if ctx.Request.Method == http.MethodOptions {
 			ctx.Next()
 		} else {
-			req, err := auth2.MakeFromHttpRequest(ctx.Request, publicURL)
+			req, err := auth2.MakeFromHttpRequest(ctx.Request, c.PublicURL)
 			if err != nil {
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
 				return
 			}
 			ok, err := authHandler.ApproveRequest(req)
 			if err != nil {
+				c.Log.WithError(err).Debug("not authorized")
 				switch err := err.(type) {
 				case auth2.AuthenticationError:
 					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

@@ -11,7 +11,7 @@ import (
 )
 
 type rootConfig struct {
-	IdentityPubKeyURL string `overwrite-flag:"authURL" validate:"required"`
+	IdentityURL string `overwrite-flag:"authURL" validate:"required"`
 
 	Coordinator struct {
 		Version      string `overwrite-flag:"version"`
@@ -37,9 +37,9 @@ func main() {
 	}
 
 	coordinatorAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
-		AuthURL:    conf.IdentityPubKeyURL,
-		Secret:     conf.Coordinator.ServerSecret,
-		RequestTTL: conf.Coordinator.AuthTTL,
+		IdentityURL: conf.IdentityURL,
+		Secret:      conf.Coordinator.ServerSecret,
+		RequestTTL:  conf.Coordinator.AuthTTL,
 	})
 
 	if err != nil {

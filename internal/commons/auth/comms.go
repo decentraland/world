@@ -3,6 +3,8 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
@@ -13,9 +15,9 @@ import (
 
 // AuthenticatorConfig is the authenticator configuration
 type AuthenticatorConfig struct {
-	Secret     string
-	AuthURL    string
-	RequestTTL int64
+	Secret      string
+	IdentityURL string
+	RequestTTL  int64
 }
 
 // Authenticator is the DCL world authenticator, secret will be shared between servers and the
@@ -27,9 +29,14 @@ type Authenticator struct {
 }
 
 func MakeAuthenticator(config *AuthenticatorConfig) (*Authenticator, error) {
-	pubKey, err := utils.ReadRemotePublicKey(config.AuthURL)
+	u, err := url.Parse(config.IdentityURL)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read public key from '%s': %v", config.AuthURL, err)
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, "/public_key")
+	pubKey, err := utils.ReadRemotePublicKey(u.String())
+	if err != nil {
+		return nil, fmt.Errorf("cannot read public key from '%s': %v", u.String(), err)
 	}
 	authProvider, err := auth2.NewThirdPartyAuthProvider(&auth2.ThirdPartyProviderConfig{
 		RequestLifeSpan: config.RequestTTL,
@@ -85,7 +92,6 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 		credentials["x-auth-type"] = "third-party"
 		credentials["x-access-token"] = qs.Get("access-token")
 
-		fmt.Println("*******AUTH FROM URL")
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte{}}
 		return a.provider.ApproveRequest(&req)
 	} else {
