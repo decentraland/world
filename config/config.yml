@@ -5,6 +5,17 @@ coordinatorURL: "ws://coordinator:9000"
 auth0:
   domain:   'dcl-test.auth0.com'
 
+worldDefinition:
+    worldName: "DEV world"
+    worldDescription: "a DEV world"
+    host: 'localhost'
+    port: 8080
+    logLevel: 'debug'
+    metrics:
+        enabled: false
+        traceName: 'worldDefinitionService'
+        analyticsRateEnabled: false
+
 coordinator:
     host: 'localhost'
     port: 9000

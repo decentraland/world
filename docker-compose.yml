@@ -15,6 +15,16 @@ services:
   # 1. ensure to set GOPATH
   # 2. it's probably more efficient to ensure the deps are installed before running up
 
+  worlddef:
+    image: golang:1.12.0
+    volumes:
+      - .:/app
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    working_dir: /app
+    command: go run cmd/worlddef/main.go --host=0.0.0.0
+    ports:
+      - "8080:8080"
+
   identity:
     image: golang:1.12.0
     volumes:

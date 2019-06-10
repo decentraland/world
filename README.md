@@ -2,6 +2,7 @@
 
 ## Components
 
+- World definition service
 - Identity service
 - Profile service
 - Communications coordinator

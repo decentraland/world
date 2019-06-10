@@ -6,6 +6,7 @@ build:
 	go build -o build/coordinator ./cmd/comms/coordinator
 	go build -o build/server ./cmd/comms/server
 	go build -o build/identity ./cmd/identity
+	go build -o build/worlddef ./cmd/worlddef
 
 buildall: build
 	go build -o build/cli_bot ./cmd/cli/bot
