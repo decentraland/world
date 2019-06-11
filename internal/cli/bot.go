@@ -181,8 +181,8 @@ func (a *ClientAuthenticator) GenerateClientConnectURL(coordinatorURL string) (s
 		return "", nil
 	}
 
-	msg := []byte{}
-	fields, err := a.EphemeralKey.MakeCredentials(msg, accessToken)
+	msg := fmt.Sprintf("GET:%s", u.String())
+	fields, err := a.EphemeralKey.MakeCredentials([]byte(msg), accessToken)
 	if err != nil {
 		return "", err
 	}
