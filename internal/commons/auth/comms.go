@@ -15,9 +15,10 @@ import (
 
 // AuthenticatorConfig is the authenticator configuration
 type AuthenticatorConfig struct {
-	Secret      string
-	IdentityURL string
-	RequestTTL  int64
+	CoordinatorURL string
+	Secret         string
+	IdentityURL    string
+	RequestTTL     int64
 }
 
 // Authenticator is the DCL world authenticator, secret will be shared between servers and the
@@ -26,17 +27,26 @@ type Authenticator struct {
 	secret        string
 	provider      auth2.AuthProvider
 	authServerURL string
+	connectURL    string
+}
+
+func joinURL(base string, rel string) (string, error) {
+	u, err := url.Parse(base)
+	if err != nil {
+		return "", err
+	}
+	u.Path = path.Join(u.Path, rel)
+	return u.String(), nil
 }
 
 func MakeAuthenticator(config *AuthenticatorConfig) (*Authenticator, error) {
-	u, err := url.Parse(config.IdentityURL)
+	pubKeyURL, err := joinURL(config.IdentityURL, "/public_key")
 	if err != nil {
 		return nil, err
 	}
-	u.Path = path.Join(u.Path, "/public_key")
-	pubKey, err := utils.ReadRemotePublicKey(u.String())
+	pubKey, err := utils.ReadRemotePublicKey(pubKeyURL)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read public key from '%s': %v", u.String(), err)
+		return nil, fmt.Errorf("cannot read public key from '%s': %v", pubKeyURL, err)
 	}
 	authProvider, err := auth2.NewThirdPartyAuthProvider(&auth2.ThirdPartyProviderConfig{
 		RequestLifeSpan: config.RequestTTL,
@@ -46,9 +56,15 @@ func MakeAuthenticator(config *AuthenticatorConfig) (*Authenticator, error) {
 		return nil, err
 	}
 
+	connectURL, err := joinURL(config.CoordinatorURL, "/connect")
+	if err != nil {
+		return nil, err
+	}
+
 	a := &Authenticator{
-		secret:   config.Secret,
-		provider: authProvider,
+		secret:     config.Secret,
+		provider:   authProvider,
+		connectURL: connectURL,
 	}
 
 	return a, nil
@@ -92,7 +108,8 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 		credentials["x-auth-type"] = "third-party"
 		credentials["x-access-token"] = qs.Get("access-token")
 
-		req := auth2.AuthRequest{Credentials: credentials, Content: []byte{}}
+		content := fmt.Sprintf("GET:%s", a.connectURL)
+		req := auth2.AuthRequest{Credentials: credentials, Content: []byte(content)}
 		return a.provider.ApproveRequest(&req)
 	} else {
 		return false, nil
