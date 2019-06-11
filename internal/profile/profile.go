@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 
@@ -159,14 +158,7 @@ DO UPDATE SET profile = $2`,
 	})
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", "*"))
-
-	identityApiUrl, err := url.Parse(config.IdentityURL)
-	if err != nil {
-		log.WithError(err).Error("error parsing identity url")
-		return err
-	}
-	identityApiUrl.Path = path.Join(identityApiUrl.Path, "/status")
-
+	
 	v1.GET("/status", func(c *gin.Context) {
 		errors := map[string]string{}
 		pingError := db.Ping()
