@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"path"
 	"strings"
@@ -24,8 +25,16 @@ type Services struct {
 
 // Config represents profile service config
 type Config struct {
-	SchemaDir string
-	Services  Services
+	SchemaDir      string
+	Services       Services
+	AuthMiddleware func(ctx *gin.Context)
+	IdentityURL    string
+}
+
+// StatusResponse contains all the service dependencies status
+type statusResponse struct {
+	Ok     bool              `json:"ok"`
+	Errors map[string]string `json:"errors"`
 }
 
 // Register register api routes
@@ -45,7 +54,14 @@ func Register(config *Config, router gin.IRouter) error {
 
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
+
+	version.RegisterVersionEndpoint(v1)
+
 	profile := v1.Group("/profile")
+
+	if config.AuthMiddleware != nil {
+		profile.Use(config.AuthMiddleware)
+	}
 
 	profile.Use(auth.IdExtractorMiddleware)
 
@@ -142,6 +158,24 @@ DO UPDATE SET profile = $2`,
 	})
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", "*"))
+	
+	v1.GET("/status", func(c *gin.Context) {
+		errors := map[string]string{}
+		pingError := db.Ping()
+		if pingError != nil {
+			log.WithError(pingError).Error("failed to connect with db")
+			errors["database"] = "failed to reach db"
+		}
+
+		statusResponse := &statusResponse{Ok: len(errors) == 0, Errors: errors}
+
+		if statusResponse.Ok {
+			c.JSON(http.StatusOK, statusResponse)
+		} else {
+			c.JSON(http.StatusServiceUnavailable, statusResponse)
+		}
+
+	})
 
 	return nil
 }

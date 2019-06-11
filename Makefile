@@ -1,11 +1,12 @@
 PROTOC ?= protoc
 PROFILE_TEST_DB_CONN_STR ?= "postgres://postgres:password@localhost/profiletest?sslmode=disable"
+VERSION := $(shell git rev-list -1 HEAD)
 
 build:
-	go build -o build/profile ./cmd/profile
-	go build -o build/coordinator ./cmd/comms/coordinator
-	go build -o build/server ./cmd/comms/server
-	go build -o build/identity ./cmd/identity
+	go build -ldflags '-X github.com/decentraland/world/internal/commons/version.version=$(VERSION)' -o build/profile ./cmd/profile
+	go build -ldflags '-X github.com/decentraland/world/internal/commons/version.version=$(VERSION)' -o build/coordinator ./cmd/comms/coordinator
+	go build -ldflags '-X github.com/decentraland/world/internal/commons/version.version=$(VERSION)' -o build/server ./cmd/comms/server
+	go build -ldflags '-X github.com/decentraland/world/internal/commons/version.version=$(VERSION)' -o build/identity ./cmd/identity
 
 buildall: build
 	go build -o build/cli_bot ./cmd/cli/bot

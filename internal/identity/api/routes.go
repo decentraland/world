@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"net/url"
 	"path"
@@ -75,6 +76,8 @@ func InitAPI(router *gin.Engine, config *Config) error {
 	api := router.Group("/api")
 
 	v1 := api.Group("/v1")
+
+	version.RegisterVersionEndpoint(v1)
 
 	v1.GET("/status", app.status)
 	v1.GET("/public_key", app.publicKey)
