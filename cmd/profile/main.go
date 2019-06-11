@@ -78,11 +78,13 @@ func main() {
 	}
 
 	config := profile.Config{
-		Services:  profile.Services{Log: log, Db: db},
-		SchemaDir: conf.Profile.SchemaDir,
+		Services:       profile.Services{Log: log, Db: db},
+		SchemaDir:      conf.Profile.SchemaDir,
+		AuthMiddleware: authMiddleware,
+		IdentityURL:    conf.IdentityURL,
 	}
 
-	if err = profile.Register(&config, router, authMiddleware); err != nil {
+	if err = profile.Register(&config, router); err != nil {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
 

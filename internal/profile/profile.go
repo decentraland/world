@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -24,12 +25,20 @@ type Services struct {
 
 // Config represents profile service config
 type Config struct {
-	SchemaDir string
-	Services  Services
+	SchemaDir      string
+	Services       Services
+	AuthMiddleware func(ctx *gin.Context)
+	IdentityURL    string
+}
+
+// StatusResponse contains all the service dependencies status
+type StatusResponse struct {
+	Ok     bool              `json:"ok"`
+	Errors map[string]string `json:"errors"`
 }
 
 // Register register api routes
-func Register(config *Config, router gin.IRouter, authMiddleware func(ctx *gin.Context)) error {
+func Register(config *Config, router gin.IRouter) error {
 	services := config.Services
 	log := services.Log
 	db := services.Db
@@ -50,8 +59,8 @@ func Register(config *Config, router gin.IRouter, authMiddleware func(ctx *gin.C
 
 	profile := v1.Group("/profile")
 
-	if authMiddleware != nil {
-		profile.Use(authMiddleware)
+	if config.AuthMiddleware != nil {
+		profile.Use(config.AuthMiddleware)
 	}
 
 	profile.Use(auth.IdExtractorMiddleware)
@@ -149,6 +158,42 @@ DO UPDATE SET profile = $2`,
 	})
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", "*"))
+
+	identityApiUrl, err := url.Parse(config.IdentityURL)
+	if err != nil {
+		log.WithError(err).Error("error parsing identity url")
+		return err
+	}
+	identityApiUrl.Path = path.Join(identityApiUrl.Path, "/status")
+	identityStatusUrl := identityApiUrl.String()
+
+	v1.GET("/status", func(c *gin.Context) {
+		errors := map[string]string{}
+		pingError := db.Ping()
+		if pingError != nil {
+			log.WithError(pingError).Error("failed to connect with db")
+			errors["database"] = "failed to reach db"
+		}
+
+		resp, idError := http.Get(identityStatusUrl)
+		if idError != nil || resp.StatusCode >= http.StatusBadRequest {
+			if idError != nil {
+				log.WithError(idError).Error("failed to connect identity service")
+			} else {
+				log.Errorf("identity service replied with status %d", resp.StatusCode)
+			}
+			errors["identity"] = "failed to reach identity service"
+		}
+
+		statusResponse := &StatusResponse{Ok: len(errors) == 0, Errors: errors}
+
+		if statusResponse.Ok {
+			c.JSON(http.StatusOK, statusResponse)
+		} else {
+			c.JSON(http.StatusServiceUnavailable, statusResponse)
+		}
+
+	})
 
 	return nil
 }
