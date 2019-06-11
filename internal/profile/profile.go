@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"net/url"
 	"path"
@@ -32,7 +33,7 @@ type Config struct {
 }
 
 // StatusResponse contains all the service dependencies status
-type StatusResponse struct {
+type statusResponse struct {
 	Ok     bool              `json:"ok"`
 	Errors map[string]string `json:"errors"`
 }
@@ -55,7 +56,7 @@ func Register(config *Config, router gin.IRouter) error {
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
 
-	utils.RegisterVersionEndpoint(v1)
+	version.RegisterVersionEndpoint(v1)
 
 	profile := v1.Group("/profile")
 
@@ -165,7 +166,6 @@ DO UPDATE SET profile = $2`,
 		return err
 	}
 	identityApiUrl.Path = path.Join(identityApiUrl.Path, "/status")
-	identityStatusUrl := identityApiUrl.String()
 
 	v1.GET("/status", func(c *gin.Context) {
 		errors := map[string]string{}
@@ -175,17 +175,7 @@ DO UPDATE SET profile = $2`,
 			errors["database"] = "failed to reach db"
 		}
 
-		resp, idError := http.Get(identityStatusUrl)
-		if idError != nil || resp.StatusCode >= http.StatusBadRequest {
-			if idError != nil {
-				log.WithError(idError).Error("failed to connect identity service")
-			} else {
-				log.Errorf("identity service replied with status %d", resp.StatusCode)
-			}
-			errors["identity"] = "failed to reach identity service"
-		}
-
-		statusResponse := &StatusResponse{Ok: len(errors) == 0, Errors: errors}
+		statusResponse := &statusResponse{Ok: len(errors) == 0, Errors: errors}
 
 		if statusResponse.Ok {
 			c.JSON(http.StatusOK, statusResponse)

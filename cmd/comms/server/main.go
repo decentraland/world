@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/decentraland/world/internal/commons/version"
 
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
 	"github.com/decentraland/world/internal/commons/auth"
@@ -13,7 +14,6 @@ type rootConfig struct {
 	IdentityURL    string `overwrite-flag:"authURL" validate:"required"`
 	CoordinatorURL string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
 	CommServer     struct {
-		Version      string `overwrite-flag:"version"`
 		LogLevel     string `overwrite-flag:"logLevel"`
 		ServerSecret string `overwrite-flag:"serverSecret"`
 		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
@@ -59,7 +59,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Infof("starting communication server - version: %s", conf.CommServer.Version)
+	log.Infof("starting communication server - version: %s", version.Version())
 
 	if err := commserver.ConnectCoordinator(state); err != nil {
 		log.Fatal("connect coordinator failure ", err)

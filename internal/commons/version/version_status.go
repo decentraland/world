@@ -1,4 +1,4 @@
-package utils
+package version
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,13 +7,17 @@ import (
 
 var version = "Not available"
 
-type VersionResponse struct {
+type versionResponse struct {
 	Version string `json:"version"`
 }
 
 func RegisterVersionEndpoint(r gin.IRoutes) {
-	v := &VersionResponse{Version: version}
+	v := &versionResponse{Version: version}
 	r.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, v)
 	})
+}
+
+func Version() string {
+	return version
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
@@ -14,7 +15,6 @@ type rootConfig struct {
 	IdentityURL string `overwrite-flag:"authURL" validate:"required"`
 
 	Coordinator struct {
-		Version      string `overwrite-flag:"version"`
 		Host         string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 		Port         int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 		LogLevel     string `overwrite-flag:"logLevel"`
@@ -55,6 +55,6 @@ func main() {
 	coordinator.Register(state, mux)
 
 	addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.Port)
-	log.Infof("starting coordinator %s - version: %s", addr, conf.Coordinator.Version)
+	log.Infof("starting coordinator %s - version: %s", addr, version.Version())
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
