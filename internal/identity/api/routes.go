@@ -76,6 +76,8 @@ func InitAPI(router *gin.Engine, config *Config) error {
 
 	v1 := api.Group("/v1")
 
+	utils.RegisterVersionEndpoint(v1)
+
 	v1.GET("/status", app.status)
 	v1.GET("/public_key", app.publicKey)
 	v1.POST("/auth", app.authData)

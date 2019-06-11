@@ -77,16 +77,12 @@ func main() {
 		log.WithError(err).Fatal("error creating auth middleware")
 	}
 
-	if authMiddleware != nil {
-		router.Use(authMiddleware)
-	}
-
 	config := profile.Config{
 		Services:  profile.Services{Log: log, Db: db},
 		SchemaDir: conf.Profile.SchemaDir,
 	}
 
-	if err = profile.Register(&config, router); err != nil {
+	if err = profile.Register(&config, router, authMiddleware); err != nil {
 		log.WithError(err).Fatal("unable to start profile service")
 	}
 

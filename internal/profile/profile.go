@@ -29,7 +29,7 @@ type Config struct {
 }
 
 // Register register api routes
-func Register(config *Config, router gin.IRouter) error {
+func Register(config *Config, router gin.IRouter, authMiddleware func(ctx *gin.Context)) error {
 	services := config.Services
 	log := services.Log
 	db := services.Db
@@ -45,7 +45,14 @@ func Register(config *Config, router gin.IRouter) error {
 
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
+
+	utils.RegisterVersionEndpoint(v1)
+
 	profile := v1.Group("/profile")
+
+	if authMiddleware != nil {
+		profile.Use(authMiddleware)
+	}
 
 	profile.Use(auth.IdExtractorMiddleware)
 
