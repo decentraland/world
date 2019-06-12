@@ -5,5 +5,12 @@
     "logout_url": "/",
     "id": "1",
     "external_id": "lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx"
+  },
+  {
+    "domain": "http://localhost:8080",
+    "login_url": "/callback",
+    "logout_url": "/",
+    "id": "2",
+    "external_id": "lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx"
   }
 ]

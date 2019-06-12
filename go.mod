@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
 	github.com/decentraland/auth-go v0.0.0-20190605200116-aa3a466745c4
-	github.com/decentraland/webrtc-broker v0.0.0-20190605200438-d94e372d5e58
+	github.com/decentraland/webrtc-broker v0.0.0-20190614114758-35a11ee652c4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
@@ -25,7 +25,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/pion/webrtc/v2 v2.0.18-0.20190604045856-ae7036afe669
+	github.com/pion/webrtc/v2 v2.0.23-0.20190614114507-3d7235b4edd6
 	github.com/pkg/errors v0.8.1
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.1
