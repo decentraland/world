@@ -4,11 +4,12 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	"github.com/decentraland/world/internal/commons/version"
 
 	"github.com/decentraland/world/internal/commons/utils"
 	"github.com/decentraland/world/internal/identity/data"

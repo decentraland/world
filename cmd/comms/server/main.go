@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/decentraland/world/internal/commons/version"
 
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
+	"github.com/sirupsen/logrus"
 )
 
 type rootConfig struct {
@@ -47,7 +49,15 @@ func main() {
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
-		CoordinatorURL: fmt.Sprintf("%s/discover", conf.CoordinatorURL),
+		CoordinatorURL:         fmt.Sprintf("%s/discover", conf.CoordinatorURL),
+		ExitOnCoordinatorClose: true,
+		Reporter: func(stats *commserver.Stats) {
+			log.WithFields(logrus.Fields{
+				"log_type":    "report",
+				"peer count":  stats.PeerCount,
+				"topic count": stats.TopicCount,
+			}).Info("report")
+		},
 	}
 
 	if err := logging.SetLevel(log, conf.CommServer.LogLevel); err != nil {

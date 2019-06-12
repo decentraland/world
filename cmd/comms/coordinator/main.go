@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
+
+	"github.com/decentraland/world/internal/commons/version"
 
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
+	"github.com/sirupsen/logrus"
 )
 
 type rootConfig struct {
@@ -48,7 +50,17 @@ func main() {
 		log.WithError(err).Fatal("cannot build authenticator")
 	}
 
-	config := coordinator.Config{Auth: coordinatorAuth, Log: log}
+	config := coordinator.Config{
+		Auth: coordinatorAuth,
+		Log:  log,
+		Reporter: func(stats *coordinator.Stats) {
+			log.WithFields(logrus.Fields{
+				"log_type":     "report",
+				"client count": stats.ClientCount,
+				"server count": stats.ServerCount,
+			}).Info("report")
+		},
+	}
 	state := coordinator.MakeState(&config)
 
 	go coordinator.Start(state)
