@@ -157,8 +157,8 @@ DO UPDATE SET profile = $2`,
 		c.JSON(http.StatusNoContent, gin.H{})
 	})
 
-	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", "*"))
-	
+	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
+
 	v1.GET("/status", func(c *gin.Context) {
 		errors := map[string]string{}
 		pingError := db.Ping()
