@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/decentraland/auth-go/pkg/auth"
 	"net/http"
+
+	"github.com/decentraland/auth-go/pkg/auth"
 
 	"github.com/gin-gonic/gin"
 )
