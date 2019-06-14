@@ -85,9 +85,9 @@ func InitAPI(router *gin.Engine, config *Config) error {
 	v1.POST("/token", app.token)
 
 	// Handle pre-flight checks one by one
-	v1.OPTIONS("/public_key", utils.PrefligthChecksMiddleware("GET", "*"))
-	v1.OPTIONS("/auth", utils.PrefligthChecksMiddleware("POST", "*"))
-	v1.OPTIONS("/token", utils.PrefligthChecksMiddleware("POST", "*"))
+	v1.OPTIONS("/public_key", utils.PrefligthChecksMiddleware("GET", utils.AllHeaders))
+	v1.OPTIONS("/auth", utils.PrefligthChecksMiddleware("POST", utils.AllHeaders))
+	v1.OPTIONS("/token", utils.PrefligthChecksMiddleware("POST", utils.AllHeaders))
 
 	return nil
 }

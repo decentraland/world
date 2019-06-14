@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"github.com/decentraland/world/internal/commons/utils"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,17 +63,17 @@ var optionsCalls = []optionTestCase{
 	{
 		name:            "Public Key",
 		url:             "/api/v1/public_key",
-		resultAssertion: assertOkResponse("GET", "*", "*"),
+		resultAssertion: assertOkResponse("GET", utils.AllHeaders, "*"),
 	},
 	{
 		name:            "Auth",
 		url:             "/api/v1/auth",
-		resultAssertion: assertOkResponse("POST", "*", "*"),
+		resultAssertion: assertOkResponse("POST", utils.AllHeaders, "*"),
 	},
 	{
 		name:            "Token",
 		url:             "/api/v1/token",
-		resultAssertion: assertOkResponse("POST", "*", "*"),
+		resultAssertion: assertOkResponse("POST", utils.AllHeaders, "*"),
 	},
 	{
 		name:            "Invalid url",
@@ -83,7 +84,7 @@ var optionsCalls = []optionTestCase{
 
 func assertOkResponse(allowedMethods, allowedHeaders, allowedOrigin string) func(t *testing.T, w *httptest.ResponseRecorder) {
 	return func(t *testing.T, w *httptest.ResponseRecorder) {
-		assert.Equal(t, http.StatusNoContent, w.Code)
+		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, allowedHeaders, w.Header().Get("Access-Control-Allow-Headers"))
 		assert.Equal(t, allowedMethods, w.Header().Get("Access-Control-Allow-Methods"))
 		assert.Equal(t, allowedOrigin, w.Header().Get("Access-Control-Allow-Origin"))
