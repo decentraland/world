@@ -80,7 +80,11 @@ func InitAPI(router *gin.Engine, config *Config) error {
 
 	version.RegisterVersionEndpoint(v1)
 
-	v1.GET("/status", app.status)
+	errors := map[string]string{}
+	v1.GET("/status", utils.ServiceStatusHandler(func() map[string]string {
+		return errors
+	}))
+
 	v1.GET("/public_key", app.publicKey)
 	v1.POST("/auth", app.authData)
 	v1.POST("/token", app.token)
@@ -91,10 +95,6 @@ func InitAPI(router *gin.Engine, config *Config) error {
 	v1.OPTIONS("/token", utils.PrefligthChecksMiddleware("POST", utils.AllHeaders))
 
 	return nil
-}
-
-func (a *application) status(c *gin.Context) {
-	c.String(http.StatusOK, "available")
 }
 
 func (a *application) publicKey(c *gin.Context) {

@@ -32,12 +32,6 @@ type Config struct {
 	IdentityURL    string
 }
 
-// StatusResponse contains all the service dependencies status
-type statusResponse struct {
-	Ok     bool              `json:"ok"`
-	Errors map[string]string `json:"errors"`
-}
-
 // Register register api routes
 func Register(config *Config, router gin.IRouter) error {
 	services := config.Services
@@ -160,7 +154,7 @@ DO UPDATE SET profile = $2`,
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
 
-	v1.GET("/status", func(c *gin.Context) {
+	v1.GET("/status", utils.ServiceStatusHandler(func() map[string]string {
 		errors := map[string]string{}
 		pingError := db.Ping()
 		if pingError != nil {
@@ -168,15 +162,8 @@ DO UPDATE SET profile = $2`,
 			errors["database"] = "failed to reach db"
 		}
 
-		statusResponse := &statusResponse{Ok: len(errors) == 0, Errors: errors}
-
-		if statusResponse.Ok {
-			c.JSON(http.StatusOK, statusResponse)
-		} else {
-			c.JSON(http.StatusServiceUnavailable, statusResponse)
-		}
-
-	})
+		return errors
+	}))
 
 	return nil
 }
