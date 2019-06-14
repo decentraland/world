@@ -1,14 +1,5 @@
 {
   "properties": {
-    "id": {
-      "type": "string",
-      "minLeght": 1,
-      "maxLeght": 100
-    },
-    "email": {
-      "type": "string",
-      "format": "email"
-    },
     "name": {
       "type": "string",
       "minLeght": 1,
@@ -169,6 +160,5 @@
       "required": [ "version", "id", "bodyShape", "skinColor", "hairColor", "eyeColor", "eyes", "eyebrow", "mouth", "wearables"]
     }
   },
-  "additionalProperties": false,
-  "required": [ "id", "email" ]
+  "additionalProperties": false
 }

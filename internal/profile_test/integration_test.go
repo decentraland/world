@@ -32,8 +32,6 @@ import (
 )
 
 var validProfile = `{
-"id": "user1",
-"email": "test@test.com",
 "name": "testname",
 "description": "desc",
 "age": 98,
@@ -182,9 +180,7 @@ func TestGetProfile(t *testing.T) {
 		err = json.Unmarshal(w.Body.Bytes(), &profile)
 		require.NoError(t, err)
 
-		require.Len(t, profile, 6)
-		require.Contains(t, profile, "id")
-		require.Contains(t, profile, "email")
+		require.Len(t, profile, 4)
 		require.Contains(t, profile, "name")
 		require.Contains(t, profile, "description")
 		require.Contains(t, profile, "age")
@@ -268,9 +264,7 @@ func TestPostProfile(t *testing.T) {
 		err = json.Unmarshal(jsonProfile, &profile)
 		require.NoError(t, err)
 
-		require.Len(t, profile, 6)
-		require.Contains(t, profile, "id")
-		require.Contains(t, profile, "email")
+		require.Len(t, profile, 4)
 		require.Contains(t, profile, "name")
 		require.Contains(t, profile, "description")
 		require.Contains(t, profile, "age")

@@ -4,11 +4,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"github.com/decentraland/world/internal/commons/utils"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/decentraland/world/internal/commons/utils"
 
 	"github.com/decentraland/world/internal/identity/mocks"
 	"github.com/gin-gonic/gin"
