@@ -1,8 +1,9 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/gin-gonic/contrib/static"
@@ -34,6 +35,21 @@ type application struct {
 	authODomain string
 }
 
+func (app *application) buildCallbackURL(relURL string, clientID string) (string, error) {
+	u, err := url.Parse(app.serverURL)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to parse serverURL %s", app.serverURL)
+		return "", err
+	}
+
+	u.Path = path.Join(u.Path, "/login_callback")
+	v := url.Values{}
+	v.Set("clientId", clientID)
+	u.RawQuery = v.Encode()
+
+	return u.String(), nil
+}
+
 func (app *application) login(c *gin.Context) {
 	clientID := c.Param("clientId")
 
@@ -42,7 +58,13 @@ func (app *application) login(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		callbackURL := fmt.Sprintf("%slogin_callback?clientId=%s", app.serverURL, clientID)
+		callbackURL, err := app.buildCallbackURL("/login_callback", clientID)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "errorPage.html", gin.H{
+				"message": "Internal Server Error"})
+			return
+		}
+
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "login.html", gin.H{
 			"callbackUrl": callbackURL,
@@ -53,7 +75,6 @@ func (app *application) login(c *gin.Context) {
 }
 
 func (app *application) loginCallback(c *gin.Context) {
-
 	params := c.Request.URL.Query()
 
 	data, ok := params["clientId"]
@@ -70,8 +91,13 @@ func (app *application) loginCallback(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
-		callbackURL := fmt.Sprintf("%s?clientId=%s", app.serverURL, clientID)
+		callbackURL, err := app.buildCallbackURL("", clientID)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "errorPage.html", gin.H{
+				"message": "Internal Server Error"})
+			return
+		}
+
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "loginCallback.html", gin.H{
 			"callbackUrl": callbackURL,
@@ -92,7 +118,12 @@ func (app *application) logout(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "errorPage.html", gin.H{
 			"message": err.Error()})
 	} else {
-		callbackURL := fmt.Sprintf("%slogout_callback?clientId=%s", app.serverURL, clientID)
+		callbackURL, err := app.buildCallbackURL("/logout_callback", clientID)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "errorPage.html", gin.H{
+				"message": "Internal Server Error"})
+			return
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Origin", client.Domain)
 		c.HTML(http.StatusOK, "logout.html", gin.H{
 			"callbackUrl": callbackURL,
