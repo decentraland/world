@@ -10,37 +10,47 @@ window.addEventListener('load', function() {
 
   webAuth.parseHash(function(err, authResult) {
     if (authResult && authResult.accessToken && authResult.idToken) {
-      send(authResult.accessToken)
+      sendToken(authResult.accessToken)
     } else if (err) {
-      console.log(err)
+      sendError(err)
     }
   })
 })
 
-function send(token) {
+function sendToken(token) {
+  const message = {
+    type: 'DECENTRALAND_USER_TOKEN',
+    token: token,
+  }
+  const defaultAction =  function () {
+    document.location.href = REDIRECT_BASE_URL + '?user_token=' + token
+  }
+  sendMessage(message, defaultAction)
+}
+
+function sendError(err) {
+  const message = {
+    type: 'DECENTRALAND_ERROR',
+    error: err,
+  }
+  const defaultAction =  function () {
+    console.log(err)
+  }
+  sendMessage(message, defaultAction)
+}
+
+function sendMessage(message, defaultAction) {
   const origin = APP_DOMAIN
   if (window.self !== window.top) {
     // Is within an Iframe
-    window.parent.postMessage(
-      {
-        type: 'DECENTRALAND_USER_TOKEN',
-        token: token,
-        from: 'IFRAME',
-      },
-      origin
-    )
+    message.from = 'IFRAME'
+    window.parent.postMessage(message, origin)
   } else if (window.opener && window.opener !== window) {
     // Is within a Popup
-    window.opener.postMessage(
-      {
-        type: 'DECENTRALAND_USER_TOKEN',
-        token: token,
-        from: 'POPUP'
-      },
-      origin
-    )
+    message.from = 'POPUP'
+    window.opener.postMessage(message, origin)
   } else {
-    // Not an iframe nor a popup, then redirect to callback url
-    document.location.href = REDIRECT_BASE_URL + '?user_token=' + token
+    // Not an iframe nor a popup, run default action
+    defaultAction()
   }
 }
