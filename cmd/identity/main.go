@@ -40,7 +40,7 @@ type rootConfig struct {
 }
 
 func main() {
-	l := log.New()
+	l := logging.New()
 	router := gin.Default()
 	router.Use(ginlogrus.Logger(l), gin.Recovery())
 

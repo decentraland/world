@@ -42,7 +42,7 @@ func (app *application) buildCallbackURL(relURL string, clientID string) (string
 		return "", err
 	}
 
-	u.Path = path.Join(u.Path, "/login_callback")
+	u.Path = path.Join(u.Path, relURL)
 	v := url.Values{}
 	v.Set("clientId", clientID)
 	u.RawQuery = v.Encode()
