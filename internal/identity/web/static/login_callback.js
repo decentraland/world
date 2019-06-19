@@ -25,7 +25,7 @@ function sendToken(token) {
   const defaultAction =  function () {
     document.location.href = REDIRECT_BASE_URL + '?user_token=' + token
   }
-  sendMessage(message, defaultAction())
+  sendMessage(message, defaultAction)
 }
 
 function sendError(err) {
@@ -36,11 +36,10 @@ function sendError(err) {
   const defaultAction =  function () {
     console.log(err)
   }
-  sendMessage(message, defaultAction())
+  sendMessage(message, defaultAction)
 }
 
 function sendMessage(message, defaultAction) {
-  debugger
   const origin = APP_DOMAIN
   if (window.self !== window.top) {
     // Is within an Iframe
