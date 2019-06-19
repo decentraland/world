@@ -41,7 +41,7 @@ type rootConfig struct {
 
 func main() {
 	l := logging.New()
-	router := gin.Default()
+	router := gin.New()
 	router.Use(ginlogrus.Logger(l), gin.Recovery())
 
 	var conf rootConfig
