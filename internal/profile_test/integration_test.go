@@ -32,33 +32,66 @@ import (
 )
 
 var validProfile = `{
-"name": "testname",
-"description": "desc",
-"age": 98,
-"avatar": {
-	"version": "v1",
-	"id": "something",
-	"bodyShape": "cid-123123",
-	"skinColor": { "r": 0.1, "g": 1, "b": 0 },
-	"hairColor": { "r": 0.1, "g": 1, "b": 0 },
-	"eyeColor": { "r": 0.1, "g": 1, "b": 0 },
-	"eyes": "cid-12313",
-	"eyebrow": "cid-12313",
-	"mouth": "cid-12313",
-	"wearables": [
-		{
-			"contentId": "cid-123123",
-			"category": "torso",
-			"mappings": [
-				{
-					"name": "file.png",
-					"file": "cid-123213"
-				}
-			]
+	"name": "testname",
+	"description": "desc",
+	"created_at": 100,
+	"avatar": {
+	  "version": "v1",
+	  "id": "something",
+	  "bodyShape": {
+		"contentName": "baseMale.glb",
+		"contents": [
+		  {
+			"file": "mask1.png",
+			"hash": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
+		  }
+		]
+	  },
+	  "eyes": {
+		"mask": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
+		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
+		"color": {
+		  "r": 0.1,
+		  "g": 1,
+		  "b": 0.1
 		}
-	]
-}
-}`
+	  },
+	  "mouth": {
+		"mask": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
+		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
+	  },
+	  "wearables": [
+		{
+		  "category": "torso",
+		  "contentName": "wearable1.glb",
+		  "contents": [
+			{
+			  "file": "wearable1.glb",
+			  "hash": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
+			}
+		  ]
+		}
+	  ],
+	  "skin": {
+		"color": {
+		  "r": 0.1,
+		  "g": 1,
+		  "b": 0.1
+		}
+	  },
+	  "hair": {
+		"color": {
+		  "r": 0.1,
+		  "g": 1,
+		  "b": 0.1
+		}
+	  },
+	  "eyebrows": {
+		"mask": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
+		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
+	  }
+	}
+  }`
 
 func prepareDb(t *testing.T) *sql.DB {
 	connStr := os.Getenv("PROFILE_TEST_DB_CONN_STR")
@@ -183,7 +216,7 @@ func TestGetProfile(t *testing.T) {
 		require.Len(t, profile, 4)
 		require.Contains(t, profile, "name")
 		require.Contains(t, profile, "description")
-		require.Contains(t, profile, "age")
+		require.Contains(t, profile, "created_at")
 		require.Contains(t, profile, "avatar")
 	})
 
@@ -267,7 +300,7 @@ func TestPostProfile(t *testing.T) {
 		require.Len(t, profile, 4)
 		require.Contains(t, profile, "name")
 		require.Contains(t, profile, "description")
-		require.Contains(t, profile, "age")
+		require.Contains(t, profile, "created_at")
 		require.Contains(t, profile, "avatar")
 	})
 }
