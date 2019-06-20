@@ -1,164 +1,184 @@
 {
+  "type": "object",
   "properties": {
     "name": {
-      "type": "string",
-      "minLeght": 1,
-      "maxLeght": 100
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "minLeght": 1,
-      "maxLeght": 200
+      "type": "string"
     },
-    "age": {
+    "created_at": {
       "type": "number"
     },
     "avatar": {
       "type": "object",
       "properties": {
         "version": {
-          "type": "string",
-          "minLeght": 1,
-          "maxLeght": 10
+          "type": "string"
         },
         "id": {
-          "type": "string",
-          "minLeght": 1,
-          "maxLeght": 100
+          "type": "string"
         },
         "bodyShape": {
-          "type": "string",
-          "minLeght": 1,
-          "maxLeght": 100
-        },
-        "skinColor": {
           "type": "object",
           "properties": {
-            "r": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
+            "contentName": {
+              "type": "string"
             },
-            "g": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "b": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
+            "contents": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "hash": {
+                    "type": "string"
+                  }
+                },
+                "required": ["file", "hash"]
+              }
             }
           },
-          "additionalProperties": false,
-          "required": [ "r", "g", "b" ]
-        },
-        "hairColor": {
-          "type": "object",
-          "properties": {
-            "r": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "g": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "b": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            }
-          },
-          "additionalProperties": false,
-          "required": [ "r", "g", "b" ]
-        },
-        "eyeColor": {
-          "type": "object",
-          "properties": {
-            "r": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "g": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "b": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            }
-          },
-          "additionalProperties": false,
-          "required": [ "r", "g", "b" ]
+          "required": ["contentName", "contents"]
         },
         "eyes": {
-          "type": "string",
-          "minLeght": 1,
-          "maxLeght": 100
-        },
-        "eyebrow": {
-          "type": "string",
-          "minLeght": 1,
-          "maxLeght": 100
+          "type": "object",
+          "properties": {
+            "mask": {
+              "type": "string"
+            },
+            "texture": {
+              "type": "string"
+            },
+            "color": {
+              "type": "object",
+              "properties": {
+                "r": {
+                  "type": "number"
+                },
+                "g": {
+                  "type": "integer"
+                },
+                "b": {
+                  "type": "number"
+                }
+              },
+              "required": ["r", "g", "b"]
+            }
+          },
+          "required": ["mask", "texture", "color"]
         },
         "mouth": {
-          "type": "string",
-          "minLeght": 1,
-          "maxLeght": 100
+          "type": "object",
+          "properties": {
+            "mask": {
+              "type": "string"
+            },
+            "texture": {
+              "type": "string"
+            }
+          },
+          "required": ["mask", "texture"]
         },
         "wearables": {
           "type": "array",
-          "maxItems": 100,
           "items": {
             "type": "object",
             "properties": {
-              "contentId": {
-                "type": "string",
-                "minLeght": 1,
-                "maxLeght": 100
-              },
               "category": {
-                "type": "string",
-                "minLeght": 1,
-                "maxLeght": 100
+                "type": "string"
               },
-              "mappings": {
+              "contentName": {
+                "type": "string"
+              },
+              "contents": {
                 "type": "array",
-                "minItems": 1,
-                "maxItems": 100,
                 "items": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string",
-                      "minLeght": 1,
-                      "maxLeght": 100
-                    },
                     "file": {
-                      "type": "string",
-                      "minLeght": 1,
-                      "maxLeght": 100
+                      "type": "string"
+                    },
+                    "hash": {
+                      "type": "string"
                     }
                   },
-                  "additionalProperties": false,
-                  "required": [ "name", "file" ]
+                  "required": ["file", "hash"]
                 }
               }
             },
-            "additionalProperties": false,
-            "required": [ "contentId", "category", "mappings" ]
+            "required": ["category", "contentName", "contents"]
           }
+        },
+        "skin": {
+          "type": "object",
+          "properties": {
+            "color": {
+              "type": "object",
+              "properties": {
+                "r": {
+                  "type": "number"
+                },
+                "g": {
+                  "type": "integer"
+                },
+                "b": {
+                  "type": "number"
+                }
+              },
+              "required": ["r", "g", "b"]
+            }
+          },
+          "required": ["color"]
+        },
+        "hair": {
+          "type": "object",
+          "properties": {
+            "color": {
+              "type": "object",
+              "properties": {
+                "r": {
+                  "type": "number"
+                },
+                "g": {
+                  "type": "integer"
+                },
+                "b": {
+                  "type": "number"
+                }
+              },
+              "required": ["r", "g", "b"]
+            }
+          },
+          "required": ["color"]
+        },
+        "eyebrows": {
+          "type": "object",
+          "properties": {
+            "mask": {
+              "type": "string"
+            },
+            "texture": {
+              "type": "string"
+            }
+          },
+          "required": ["mask", "texture"]
         }
       },
-      "additionalProperties": false,
-      "required": [ "version", "id", "bodyShape", "skinColor", "hairColor", "eyeColor", "eyes", "eyebrow", "mouth", "wearables"]
+      "required": [
+        "version",
+        "id",
+        "bodyShape",
+        "eyes",
+        "mouth",
+        "wearables",
+        "skin",
+        "hair",
+        "eyebrows"
+      ]
     }
   },
-  "additionalProperties": false
+  "required": ["name", "description", "created_at", "avatar"]
 }
