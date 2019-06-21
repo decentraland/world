@@ -37,11 +37,19 @@
                     "type": "string"
                   }
                 },
-                "required": ["file", "hash"]
+                "additionalProperties": false,
+                "required": [
+                  "file",
+                  "hash"
+                ]
               }
             }
           },
-          "required": ["contentName", "contents"]
+          "additionalProperties": false,
+          "required": [
+            "contentName",
+            "contents"
+          ]
         },
         "eyes": {
           "type": "object",
@@ -59,28 +67,37 @@
                   "type": "number"
                 },
                 "g": {
-                  "type": "integer"
+                  "type": "number"
                 },
                 "b": {
                   "type": "number"
                 }
               },
-              "required": ["r", "g", "b"]
+              "additionalProperties": false,
+              "required": [
+                "r",
+                "g",
+                "b"
+              ]
             }
           },
-          "required": ["mask", "texture", "color"]
+          "additionalProperties": false,
+          "required": [
+            "texture",
+            "color"
+          ]
         },
         "mouth": {
           "type": "object",
           "properties": {
-            "mask": {
-              "type": "string"
-            },
             "texture": {
               "type": "string"
             }
           },
-          "required": ["mask", "texture"]
+          "additionalProperties": false,
+          "required": [
+            "texture"
+          ]
         },
         "wearables": {
           "type": "array",
@@ -105,11 +122,20 @@
                       "type": "string"
                     }
                   },
-                  "required": ["file", "hash"]
+                  "additionalProperties": false,
+                  "required": [
+                    "file",
+                    "hash"
+                  ]
                 }
               }
             },
-            "required": ["category", "contentName", "contents"]
+            "additionalProperties": false,
+            "required": [
+              "category",
+              "contentName",
+              "contents"
+            ]
           }
         },
         "skin": {
@@ -122,16 +148,24 @@
                   "type": "number"
                 },
                 "g": {
-                  "type": "integer"
+                  "type": "number"
                 },
                 "b": {
                   "type": "number"
                 }
               },
-              "required": ["r", "g", "b"]
+              "additionalProperties": false,
+              "required": [
+                "r",
+                "g",
+                "b"
+              ]
             }
           },
-          "required": ["color"]
+          "additionalProperties": false,
+          "required": [
+            "color"
+          ]
         },
         "hair": {
           "type": "object",
@@ -143,30 +177,39 @@
                   "type": "number"
                 },
                 "g": {
-                  "type": "integer"
+                  "type": "number"
                 },
                 "b": {
                   "type": "number"
                 }
               },
-              "required": ["r", "g", "b"]
+              "additionalProperties": false,
+              "required": [
+                "r",
+                "g",
+                "b"
+              ]
             }
           },
-          "required": ["color"]
+          "additionalProperties": false,
+          "required": [
+            "color"
+          ]
         },
         "eyebrows": {
           "type": "object",
           "properties": {
-            "mask": {
-              "type": "string"
-            },
             "texture": {
               "type": "string"
             }
           },
-          "required": ["mask", "texture"]
+          "additionalProperties": false,
+          "required": [
+            "texture"
+          ]
         }
       },
+      "additionalProperties": false,
       "required": [
         "version",
         "id",
@@ -180,5 +223,6 @@
       ]
     }
   },
-  "required": ["name", "description", "created_at", "avatar"]
+  "additionalProperties": false,
+  "required": []
 }
