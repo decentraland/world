@@ -57,7 +57,6 @@ var validProfile = `{
 		}
 	  },
 	  "mouth": {
-		"mask": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
 		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
 	  },
 	  "wearables": [
@@ -87,7 +86,6 @@ var validProfile = `{
 		}
 	  },
 	  "eyebrows": {
-		"mask": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
 		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
 	  }
 	}
