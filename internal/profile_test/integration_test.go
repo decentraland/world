@@ -170,6 +170,17 @@ func TestGetProfile(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusUnauthorized, w.Code)
+
+		accessToken, err = generateAccessToken(sk, addr, 0, "user1")
+		require.NoError(t, err)
+
+		req, _ = http.NewRequest("GET", "/api/v1/profile/user1", nil)
+
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
+
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
 	t.Run("No profile stored should return 404", func(t *testing.T) {
@@ -187,6 +198,17 @@ func TestGetProfile(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusNotFound, w.Code)
+
+		accessToken, err = generateAccessToken(serverKey, addr, 6000, "user1")
+		require.NoError(t, err)
+
+		req, _ = http.NewRequest("GET", "/api/v1/profile/user2", nil)
+
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
+
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusNotFound, w.Code)
 	})
 
 	t.Run("Profile returned", func(t *testing.T) {
@@ -199,6 +221,35 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		req, _ := http.NewRequest("GET", "/api/v1/profile", nil)
+
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		var profile map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &profile)
+		require.NoError(t, err)
+
+		require.Len(t, profile, 4)
+		require.Contains(t, profile, "name")
+		require.Contains(t, profile, "description")
+		require.Contains(t, profile, "created_at")
+		require.Contains(t, profile, "avatar")
+	})
+
+	t.Run("Other Users Profile returned", func(t *testing.T) {
+		_, err := db.Exec("DELETE FROM profiles")
+		require.NoError(t, err)
+		_, err = db.Exec(`INSERT INTO profiles VALUES ('user1', $1)`, validProfile)
+		require.NoError(t, err)
+
+		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user2")
+		require.NoError(t, err)
+
+		req, _ := http.NewRequest("GET", "/api/v1/profile/user1", nil)
 
 		err = ephemeralKey.AddRequestHeaders(req, accessToken)
 		require.NoError(t, err)

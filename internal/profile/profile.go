@@ -61,53 +61,14 @@ func Register(config *Config, router gin.IRouter) error {
 	profile.Use(auth.IdExtractorMiddleware)
 
 	internalError := gin.H{"error": "Internal error, please retry later"}
-	profile.GET("", func(c *gin.Context) {
-		userID := c.GetString("userId")
 
-		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
+	profile.GET("", getUser(db, log, schema, func(c *gin.Context) string {
+		return  c.GetString("userId")
+	}))
 
-		var jsonProfile []byte
-		err := row.Scan(&jsonProfile)
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{})
-			return
-		}
-
-		if err != nil {
-			log.WithError(err).Error("query profile failed")
-			c.JSON(http.StatusInternalServerError, internalError)
-			return
-		}
-
-		profile := make(map[string]interface{})
-
-		// var profile definitions.Profile
-		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
-			log.WithError(err).Error("json unmarshalling failed")
-			c.JSON(http.StatusInternalServerError, internalError)
-			return
-		}
-
-		documentLoader := gojsonschema.NewGoLoader(profile)
-		result, err := schema.Validate(documentLoader)
-		if err != nil {
-			log.WithError(err).Error("json validation failed")
-			c.JSON(http.StatusInternalServerError, internalError)
-			return
-		}
-
-		if !result.Valid() {
-			errors := make([]string, 0, len(result.Errors()))
-			for _, desc := range result.Errors() {
-				errors = append(errors, desc.String())
-			}
-			log.Errorf("invalid response from get profile: %s", strings.Join(errors, ", "))
-			c.JSON(http.StatusInternalServerError, internalError)
-			return
-		}
-
-		c.JSON(200, profile)
-	})
+	profile.GET("/:id", getUser(db, log, schema, func(c *gin.Context) string {
+		return  c.Param("id")
+	}))
 
 	profile.POST("", func(c *gin.Context) {
 		userID := c.GetString("userId")
@@ -166,4 +127,56 @@ DO UPDATE SET profile = $2`,
 	}))
 
 	return nil
+}
+
+func getUser(db  *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userIdProvider func(c *gin.Context) string) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		internalError := gin.H{"error": "Internal error, please retry later"}
+
+		userID := userIdProvider(c)
+
+		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
+
+		var jsonProfile []byte
+		err := row.Scan(&jsonProfile)
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{})
+			return
+		}
+
+		if err != nil {
+			log.WithError(err).Error("query profile failed")
+			c.JSON(http.StatusInternalServerError, internalError)
+			return
+		}
+
+		profile := make(map[string]interface{})
+
+		// var profile definitions.Profile
+		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
+			log.WithError(err).Error("json unmarshalling failed")
+			c.JSON(http.StatusInternalServerError, internalError)
+			return
+		}
+
+		documentLoader := gojsonschema.NewGoLoader(profile)
+		result, err := schema.Validate(documentLoader)
+		if err != nil {
+			log.WithError(err).Error("json validation failed")
+			c.JSON(http.StatusInternalServerError, internalError)
+			return
+		}
+
+		if !result.Valid() {
+			errors := make([]string, 0, len(result.Errors()))
+			for _, desc := range result.Errors() {
+				errors = append(errors, desc.String())
+			}
+			log.Errorf("invalid response from get profile: %s", strings.Join(errors, ", "))
+			c.JSON(http.StatusInternalServerError, internalError)
+			return
+		}
+
+		c.JSON(200, profile)
+	}
 }
