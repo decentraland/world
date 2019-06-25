@@ -3,9 +3,9 @@ CREATE TABLE IF NOT EXISTS profiles (
     profile json NOT NULL
 );
 
-ALTER TABLE profiles ADD COLUMN created_at  timestamp DEFAULT now();
-ALTER TABLE profiles ADD COLUMN updated_at  timestamp DEFAULT now();
-ALTER TABLE profiles ADD COLUMN version INTEGER DEFAULT 1;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS created_at  timestamp DEFAULT now();
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS updated_at  timestamp DEFAULT now();
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
 
 
 CREATE OR REPLACE FUNCTION update_metadata()
@@ -17,9 +17,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER set_version
+DROP TRIGGER IF EXISTS set_metadata ON profiles;
+CREATE TRIGGER set_metadata
   BEFORE UPDATE ON profiles
   FOR EACH ROW
 EXECUTE PROCEDURE update_metadata();
-
-commit
