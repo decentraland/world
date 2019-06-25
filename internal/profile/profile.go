@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"path"
 	"strings"
-
-	"github.com/decentraland/world/internal/commons/version"
+	"time"
 
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/utils"
@@ -30,6 +30,16 @@ type Config struct {
 	Services       Services
 	AuthMiddleware func(ctx *gin.Context)
 	IdentityURL    string
+}
+
+type createProfileResponse struct {
+	Version int64  `json:"version"`
+	UserId  string `json:"user_id"`
+}
+
+type getProfileResponse struct {
+	Version int64                  `json:"version"`
+	Profile map[string]interface{} `json:"profile"`
 }
 
 // Register register api routes
@@ -63,11 +73,11 @@ func Register(config *Config, router gin.IRouter) error {
 	internalError := gin.H{"error": "Internal error, please retry later"}
 
 	profile.GET("", getUser(db, log, schema, func(c *gin.Context) string {
-		return  c.GetString("userId")
+		return c.GetString("userId")
 	}))
 
 	profile.GET("/:id", getUser(db, log, schema, func(c *gin.Context) string {
-		return  c.Param("id")
+		return c.Param("id")
 	}))
 
 	profile.POST("", func(c *gin.Context) {
@@ -98,11 +108,12 @@ func Register(config *Config, router gin.IRouter) error {
 			return
 		}
 
+		version := time.Now().UnixNano() / int64(time.Millisecond)
 		_, err = db.Exec(`
-INSERT INTO profiles (user_id, profile) VALUES($1, $2)
+INSERT INTO profiles (user_id, profile, version) VALUES($1, $2, $3)
 ON CONFLICT (user_id)
-DO UPDATE SET profile = $2`,
-			userID, data)
+DO UPDATE SET profile = $2, version = $3`,
+			userID, data, version)
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")
@@ -110,7 +121,7 @@ DO UPDATE SET profile = $2`,
 			return
 		}
 
-		c.JSON(http.StatusNoContent, gin.H{})
+		c.JSON(http.StatusOK, &createProfileResponse{UserId: userID, Version: version})
 	})
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
@@ -129,16 +140,17 @@ DO UPDATE SET profile = $2`,
 	return nil
 }
 
-func getUser(db  *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userIdProvider func(c *gin.Context) string) func(c *gin.Context) {
+func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userIdProvider func(c *gin.Context) string) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		internalError := gin.H{"error": "Internal error, please retry later"}
 
 		userID := userIdProvider(c)
 
-		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
+		row := db.QueryRow("SELECT profile, version FROM profiles WHERE user_id = $1", userID)
 
 		var jsonProfile []byte
-		err := row.Scan(&jsonProfile)
+		var version int64
+		err := row.Scan(&jsonProfile, &version)
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{})
 			return
@@ -177,6 +189,6 @@ func getUser(db  *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userI
 			return
 		}
 
-		c.JSON(200, profile)
+		c.JSON(200, &getProfileResponse{Version: version, Profile: profile})
 	}
 }
