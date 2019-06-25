@@ -3,12 +3,16 @@ CREATE TABLE IF NOT EXISTS profiles (
     profile json NOT NULL
 );
 
-ALTER TABLE profiles ADD COLUMN version BIGINT default(extract(epoch from now()) * 1000);
+ALTER TABLE profiles ADD COLUMN created_at  timestamp DEFAULT now();
+ALTER TABLE profiles ADD COLUMN updated_at  timestamp DEFAULT now();
+ALTER TABLE profiles ADD COLUMN version INTEGER DEFAULT 1;
 
-CREATE OR REPLACE FUNCTION update_version()
+
+CREATE OR REPLACE FUNCTION update_metadata()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.version = extract(epoch FROM NOW()) * 1000;
+  NEW.updated_at = NOW();
+  NEW.version := OLD.version + 1;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -16,6 +20,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER set_version
   BEFORE UPDATE ON profiles
   FOR EACH ROW
-EXECUTE PROCEDURE update_version();
+EXECUTE PROCEDURE update_metadata();
 
 commit

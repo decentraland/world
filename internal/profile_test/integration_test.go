@@ -233,6 +233,7 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, profileResponse["version"])
+		require.Equal(t, "user1", profileResponse["user_id"])
 
 		profile := profileResponse["profile"]
 
@@ -266,6 +267,7 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, profileResponse["version"])
+		require.Equal(t, "user1", profileResponse["user_id"])
 
 		profile := profileResponse["profile"]
 
@@ -383,9 +385,6 @@ func TestPostProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updateVersion float64 = updateResponse["version"].(float64)
-
-		require.NotEqual(t, responseVersion, updateVersion)
-		require.True(t, updateVersion > responseVersion)
-
+		require.Equal(t, responseVersion + 1, updateVersion)
 	})
 }

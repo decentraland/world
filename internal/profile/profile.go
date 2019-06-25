@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/auth"
+	"github.com/decentraland/world/internal/commons/utils"
 	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"path"
 	"strings"
-	"time"
-
-	"github.com/decentraland/world/internal/commons/auth"
-	"github.com/decentraland/world/internal/commons/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -34,12 +32,13 @@ type Config struct {
 
 type createProfileResponse struct {
 	Version int64  `json:"version"`
-	UserId  string `json:"user_id"`
+	UserID  string `json:"user_id"`
 }
 
 type getProfileResponse struct {
 	Version int64                  `json:"version"`
 	Profile map[string]interface{} `json:"profile"`
+	UserID  string                 `json:"user_id"`
 }
 
 // Register register api routes
@@ -108,12 +107,13 @@ func Register(config *Config, router gin.IRouter) error {
 			return
 		}
 
-		version := time.Now().UnixNano() / int64(time.Millisecond)
-		_, err = db.Exec(`
-INSERT INTO profiles (user_id, profile, version) VALUES($1, $2, $3)
+		var version int64
+		err = db.QueryRow(`
+INSERT INTO profiles (user_id, profile) VALUES($1, $2)
 ON CONFLICT (user_id)
-DO UPDATE SET profile = $2, version = $3`,
-			userID, data, version)
+DO UPDATE SET profile = $2
+RETURNING version`,
+			userID, data).Scan(&version)
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")
@@ -121,7 +121,7 @@ DO UPDATE SET profile = $2, version = $3`,
 			return
 		}
 
-		c.JSON(http.StatusOK, &createProfileResponse{UserId: userID, Version: version})
+		c.JSON(http.StatusOK, &createProfileResponse{UserID: userID, Version: version})
 	})
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
@@ -189,6 +189,6 @@ func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userId
 			return
 		}
 
-		c.JSON(200, &getProfileResponse{Version: version, Profile: profile})
+		c.JSON(200, &getProfileResponse{Version: version, Profile: profile, UserID: userID})
 	}
 }
