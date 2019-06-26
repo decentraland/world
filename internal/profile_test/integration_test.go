@@ -385,6 +385,6 @@ func TestPostProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updateVersion float64 = updateResponse["version"].(float64)
-		require.Equal(t, responseVersion + 1, updateVersion)
+		require.True(t, updateVersion > responseVersion)
 	})
 }
