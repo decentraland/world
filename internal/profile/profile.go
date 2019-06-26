@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/decentraland/world/internal/commons/auth"
+	"github.com/decentraland/world/internal/commons/utils"
+	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"path"
 	"strings"
-
-	"github.com/decentraland/world/internal/commons/version"
-
-	"github.com/decentraland/world/internal/commons/auth"
-	"github.com/decentraland/world/internal/commons/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -30,6 +28,17 @@ type Config struct {
 	Services       Services
 	AuthMiddleware func(ctx *gin.Context)
 	IdentityURL    string
+}
+
+type createProfileResponse struct {
+	Version int64  `json:"version"`
+	UserID  string `json:"user_id"`
+}
+
+type getProfileResponse struct {
+	Version int64                  `json:"version"`
+	Profile map[string]interface{} `json:"profile"`
+	UserID  string                 `json:"user_id"`
 }
 
 // Register register api routes
@@ -61,13 +70,87 @@ func Register(config *Config, router gin.IRouter) error {
 	profile.Use(auth.IdExtractorMiddleware)
 
 	internalError := gin.H{"error": "Internal error, please retry later"}
-	profile.GET("", func(c *gin.Context) {
+
+	profile.GET("", getUser(db, log, schema, func(c *gin.Context) string {
+		return c.GetString("userId")
+	}))
+
+	profile.GET("/:id", getUser(db, log, schema, func(c *gin.Context) string {
+		return c.Param("id")
+	}))
+
+	profile.POST("", func(c *gin.Context) {
 		userID := c.GetString("userId")
 
-		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
+		data, err := c.GetRawData()
+		if err != nil {
+			log.WithError(err).Error("get raw data failed")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			return
+		}
+
+		documentLoader := gojsonschema.NewBytesLoader(data)
+		result, err := schema.Validate(documentLoader)
+		if err != nil {
+			log.WithError(err).Error("json validation failed")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err})
+			return
+		}
+
+		if !result.Valid() {
+			errors := make([]string, 0, len(result.Errors()))
+			for _, desc := range result.Errors() {
+				errors = append(errors, desc.String())
+			}
+
+			c.JSON(400, gin.H{"errors": errors})
+			return
+		}
+
+		var version int64
+		err = db.QueryRow(`
+INSERT INTO profiles (user_id, profile) VALUES($1, $2)
+ON CONFLICT (user_id)
+DO UPDATE SET profile = $2
+RETURNING version`,
+			userID, data).Scan(&version)
+
+		if err != nil {
+			log.WithError(err).Error("insert failed")
+			c.JSON(http.StatusInternalServerError, internalError)
+			return
+		}
+
+		c.JSON(http.StatusOK, &createProfileResponse{UserID: userID, Version: version})
+	})
+
+	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
+
+	v1.GET("/status", utils.ServiceStatusHandler(func() map[string]string {
+		errors := map[string]string{}
+		pingError := db.Ping()
+		if pingError != nil {
+			log.WithError(pingError).Error("failed to connect with db")
+			errors["database"] = "failed to reach db"
+		}
+
+		return errors
+	}))
+
+	return nil
+}
+
+func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userIdProvider func(c *gin.Context) string) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		internalError := gin.H{"error": "Internal error, please retry later"}
+
+		userID := userIdProvider(c)
+
+		row := db.QueryRow("SELECT profile, version FROM profiles WHERE user_id = $1", userID)
 
 		var jsonProfile []byte
-		err := row.Scan(&jsonProfile)
+		var version int64
+		err := row.Scan(&jsonProfile, &version)
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{})
 			return
@@ -106,64 +189,6 @@ func Register(config *Config, router gin.IRouter) error {
 			return
 		}
 
-		c.JSON(200, profile)
-	})
-
-	profile.POST("", func(c *gin.Context) {
-		userID := c.GetString("userId")
-
-		data, err := c.GetRawData()
-		if err != nil {
-			log.WithError(err).Error("get raw data failed")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-			return
-		}
-
-		documentLoader := gojsonschema.NewBytesLoader(data)
-		result, err := schema.Validate(documentLoader)
-		if err != nil {
-			log.WithError(err).Error("json validation failed")
-			c.JSON(http.StatusBadRequest, gin.H{"error": err})
-			return
-		}
-
-		if !result.Valid() {
-			errors := make([]string, 0, len(result.Errors()))
-			for _, desc := range result.Errors() {
-				errors = append(errors, desc.String())
-			}
-
-			c.JSON(400, gin.H{"errors": errors})
-			return
-		}
-
-		_, err = db.Exec(`
-INSERT INTO profiles (user_id, profile) VALUES($1, $2)
-ON CONFLICT (user_id)
-DO UPDATE SET profile = $2`,
-			userID, data)
-
-		if err != nil {
-			log.WithError(err).Error("insert failed")
-			c.JSON(http.StatusInternalServerError, internalError)
-			return
-		}
-
-		c.JSON(http.StatusNoContent, gin.H{})
-	})
-
-	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
-
-	v1.GET("/status", utils.ServiceStatusHandler(func() map[string]string {
-		errors := map[string]string{}
-		pingError := db.Ping()
-		if pingError != nil {
-			log.WithError(pingError).Error("failed to connect with db")
-			errors["database"] = "failed to reach db"
-		}
-
-		return errors
-	}))
-
-	return nil
+		c.JSON(200, &getProfileResponse{Version: version, Profile: profile, UserID: userID})
+	}
 }

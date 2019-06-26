@@ -7,7 +7,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -170,6 +169,17 @@ func TestGetProfile(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusUnauthorized, w.Code)
+
+		accessToken, err = generateAccessToken(sk, addr, 0, "user1")
+		require.NoError(t, err)
+
+		req, _ = http.NewRequest("GET", "/api/v1/profile/user1", nil)
+
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
+
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
 	t.Run("No profile stored should return 404", func(t *testing.T) {
@@ -185,6 +195,17 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusNotFound, w.Code)
+
+		accessToken, err = generateAccessToken(serverKey, addr, 6000, "user1")
+		require.NoError(t, err)
+
+		req, _ = http.NewRequest("GET", "/api/v1/profile/user2", nil)
+
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
+
 		router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusNotFound, w.Code)
 	})
@@ -207,9 +228,48 @@ func TestGetProfile(t *testing.T) {
 		router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusOK, w.Code)
 
-		var profile map[string]interface{}
-		err = json.Unmarshal(w.Body.Bytes(), &profile)
+		var profileResponse map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &profileResponse)
 		require.NoError(t, err)
+
+		require.NotNil(t, profileResponse["version"])
+		require.Equal(t, "user1", profileResponse["user_id"])
+
+		profile := profileResponse["profile"]
+
+		require.Len(t, profile, 4)
+		require.Contains(t, profile, "name")
+		require.Contains(t, profile, "description")
+		require.Contains(t, profile, "created_at")
+		require.Contains(t, profile, "avatar")
+	})
+
+	t.Run("Other Users Profile returned", func(t *testing.T) {
+		_, err := db.Exec("DELETE FROM profiles")
+		require.NoError(t, err)
+		_, err = db.Exec(`INSERT INTO profiles VALUES ('user1', $1)`, validProfile)
+		require.NoError(t, err)
+
+		accessToken, err := generateAccessToken(serverKey, addr, 6000, "user2")
+		require.NoError(t, err)
+
+		req, _ := http.NewRequest("GET", "/api/v1/profile/user1", nil)
+
+		err = ephemeralKey.AddRequestHeaders(req, accessToken)
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		var profileResponse map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &profileResponse)
+		require.NoError(t, err)
+
+		require.NotNil(t, profileResponse["version"])
+		require.Equal(t, "user1", profileResponse["user_id"])
+
+		profile := profileResponse["profile"]
 
 		require.Len(t, profile, 4)
 		require.Contains(t, profile, "name")
@@ -280,25 +340,51 @@ func TestPostProfile(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
 
-		fmt.Println(string(w.Body.Bytes()))
-		require.Equal(t, http.StatusNoContent, w.Code)
+		var response map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
 
 		userID := "user1"
-		row := db.QueryRow("SELECT profile FROM profiles WHERE user_id = $1", userID)
+		row := db.QueryRow("SELECT profile, version FROM profiles WHERE user_id = $1", userID)
 
 		var jsonProfile []byte
-		err = row.Scan(&jsonProfile)
+		var version int64
+		err = row.Scan(&jsonProfile, &version)
 		require.NoError(t, err)
 
 		var profile map[string]interface{}
 		err = json.Unmarshal(jsonProfile, &profile)
 		require.NoError(t, err)
 
+		var responseVersion float64 = response["version"].(float64)
+
+		require.Equal(t, version, int64(responseVersion))
+		require.Equal(t, userID, response["user_id"])
 		require.Len(t, profile, 4)
 		require.Contains(t, profile, "name")
 		require.Contains(t, profile, "description")
 		require.Contains(t, profile, "created_at")
 		require.Contains(t, profile, "avatar")
+
+		reader = strings.NewReader(validProfile)
+		updateReq, _ := http.NewRequest("POST", "/api/v1/profile", reader)
+		accessToken, err = generateAccessToken(serverKey, addr, 0, "user1")
+		require.NoError(t, err)
+
+		err = ephemeralKey.AddRequestHeaders(updateReq, accessToken)
+		require.NoError(t, err)
+
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, updateReq)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		var updateResponse map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &updateResponse)
+		require.NoError(t, err)
+
+		var updateVersion float64 = updateResponse["version"].(float64)
+		require.True(t, updateVersion > responseVersion)
 	})
 }

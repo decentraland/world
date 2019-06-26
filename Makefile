@@ -34,4 +34,7 @@ tidy:
 compile-protocol:
 	cd pkg/protocol; ${PROTOC} --js_out=import_style=commonjs,binary:. --ts_out=. --go_out=. ./comms.proto
 
+profiledb:
+	psql $(CONN_STR) -f ./internal/profile/db.sql
+
 .PHONY: build
