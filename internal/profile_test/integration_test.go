@@ -32,7 +32,7 @@ import (
 
 var validProfile = `{
 	"name": "name",
-	"descripton": "description",
+	"description": "description",
 	"created_at": 11111111,
 	"avatar": {
 	  "version": 2,
