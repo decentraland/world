@@ -85,7 +85,8 @@ func Register(config *Config, router gin.IRouter) error {
 		data, err := c.GetRawData()
 		if err != nil {
 			log.WithError(err).Error("get raw data failed")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
@@ -117,6 +118,7 @@ RETURNING version`,
 
 		if err != nil {
 			log.WithError(err).Error("insert failed")
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
@@ -158,6 +160,7 @@ func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userId
 
 		if err != nil {
 			log.WithError(err).Error("query profile failed")
+			c.Error(fmt.Errorf("query profile failed: %s", err.Error()))
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
@@ -167,6 +170,7 @@ func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userId
 		// var profile definitions.Profile
 		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
+			c.Error(fmt.Errorf("json unmarshalling failed: %s", err.Error()))
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
@@ -175,16 +179,19 @@ func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userId
 		result, err := schema.Validate(documentLoader)
 		if err != nil {
 			log.WithError(err).Error("json validation failed")
+			c.Error(fmt.Errorf("json validation failed: %s", err.Error()))
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
 
 		if !result.Valid() {
-			errors := make([]string, 0, len(result.Errors()))
+			errs := make([]string, 0, len(result.Errors()))
 			for _, desc := range result.Errors() {
-				errors = append(errors, desc.String())
+				errs = append(errs, desc.String())
 			}
-			log.Errorf("invalid response from get profile: %s", strings.Join(errors, ", "))
+			logErr := fmt.Errorf("invalid response from get profile: %s", strings.Join(errs, ", "))
+			log.WithError(logErr)
+			c.Error(logErr)
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}

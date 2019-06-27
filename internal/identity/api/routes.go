@@ -122,7 +122,7 @@ func (a *application) authData(c *gin.Context) {
 	}
 
 	if client.LogoutURL != req.LogoutURL || client.LoginURL != req.LoginURL {
-		log.Error("Provided data do no match")
+		log.Errorf("Provided data do no match: domain[%s], logoutUrl[%s], loginUrl[%s]", req.Domain, req.LoginURL, req.LogoutURL)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": errors.New("Provided data do no match")})
 		return
 	}
@@ -152,12 +152,15 @@ func (a *application) token(c *gin.Context) {
 	user, err := a.auth0.GetUserInfo(params.UserToken)
 
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		log.WithError(err).Error("unauthorized token")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user"})
 		return
 	}
 
 	token, err := a.generator.NewToken(user.UserID, params.PublicKey)
 	if err != nil {
+		c.Error(err)
+		log.WithError(err).Error("failed to sign auth token")
 		c.JSON(http.StatusInternalServerError, "error signing token")
 		return
 	}
