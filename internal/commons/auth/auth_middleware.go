@@ -51,6 +51,8 @@ func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, c *MiddlewareConfigura
 		} else {
 			req, err := auth2.MakeFromHttpRequest(ctx.Request, c.PublicURL)
 			if err != nil {
+				c.Log.WithError(err).Error("unable to authenticate request")
+				ctx.Error(err)
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unable to authenticate request"})
 				return
 			}
@@ -63,7 +65,9 @@ func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, c *MiddlewareConfigura
 				case auth2.AuthorizationError:
 					ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
 				default:
-					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					ctx.Error(err)
+					c.Log.WithError(err).Error("internal error")
+					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal error, try again later"})
 				}
 				return
 			}

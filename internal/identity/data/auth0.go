@@ -85,6 +85,6 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	errorResponse := &authAPIErrorResponse{}
 	json.NewDecoder(res.Body).Decode(errorResponse)
 
-	msg := fmt.Sprintf("%d %s - %s", res.StatusCode, errorResponse.Error, errorResponse.ErrorDescription)
+	msg := fmt.Sprintf("%d(%s) %s - %s", res.StatusCode, res.Status, errorResponse.Error, errorResponse.ErrorDescription)
 	return user, errors.New(msg)
 }
