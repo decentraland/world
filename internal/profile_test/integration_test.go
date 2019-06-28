@@ -31,64 +31,45 @@ import (
 )
 
 var validProfile = `{
-	"name": "testname",
-	"description": "desc",
-	"created_at": 100,
+	"name": "name",
+	"description": "description",
+	"created_at": 11111111,
 	"avatar": {
-	  "version": "v1",
-	  "id": "something",
-	  "bodyShape": {
-		"contentName": "baseMale.glb",
-		"contents": [
-		  {
-			"file": "mask1.png",
-			"hash": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
-		  }
-		]
-	  },
-	  "eyes": {
-		"mask": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
-		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv",
-		"color": {
-		  "r": 0.1,
-		  "g": 1,
-		  "b": 0.1
-		}
-	  },
-	  "mouth": {
-		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
-	  },
-	  "wearables": [
-		{
-		  "category": "torso",
-		  "contentName": "wearable1.glb",
-		  "contents": [
-			{
-			  "file": "wearable1.glb",
-			  "hash": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
-			}
-		  ]
-		}
-	  ],
+	  "version": 2,
+  
 	  "skin": {
 		"color": {
 		  "r": 0.1,
-		  "g": 1,
+		  "g": 0.1,
 		  "b": 0.1
 		}
 	  },
+  
 	  "hair": {
 		"color": {
 		  "r": 0.1,
-		  "g": 1,
+		  "g": 0.1,
 		  "b": 0.1
 		}
 	  },
-	  "eyebrows": {
-		"texture": "QmVpV7qvtpUccDsamnXkQRLgeZYZvh7e5nwVavTuGidpFv"
-	  }
+  
+	  "eyes": {
+		"color": {
+		  "r": 0.1,
+		  "g": 0.1,
+		  "b": 0.1
+		}
+	  },
+  
+	  "bodyShape": "dcl://base-avatars/BaseMale",
+  
+	  "wearables": [
+		"dcl://base-avatars/m_blue_jacket",
+		"dcl://base-avatars/black_sun_glasses"
+	  ]
 	}
-  }`
+  }
+  `
 
 func prepareDb(t *testing.T) *sql.DB {
 	connStr := os.Getenv("PROFILE_TEST_DB_CONN_STR")
