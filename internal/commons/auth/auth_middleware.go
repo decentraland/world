@@ -67,7 +67,7 @@ func NewThirdPartyAuthMiddleware(pubKey *ecdsa.PublicKey, c *MiddlewareConfigura
 				default:
 					ctx.Error(err)
 					c.Log.WithError(err).Error("internal error")
-					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal error, retry again later"})
+					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal error, try again later"})
 				}
 				return
 			}

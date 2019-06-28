@@ -170,7 +170,7 @@ func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userId
 		// var profile definitions.Profile
 		if err := json.Unmarshal(jsonProfile, &profile); err != nil {
 			log.WithError(err).Error("json unmarshalling failed")
-			c.Error(fmt.Errorf("json unmarshalling failed: %s", err.Error()))
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
@@ -179,7 +179,7 @@ func getUser(db *sql.DB, log *logrus.Logger, schema *gojsonschema.Schema, userId
 		result, err := schema.Validate(documentLoader)
 		if err != nil {
 			log.WithError(err).Error("json validation failed")
-			c.Error(fmt.Errorf("json validation failed: %s", err.Error()))
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, internalError)
 			return
 		}
