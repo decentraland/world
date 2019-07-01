@@ -29,7 +29,7 @@ type rootConfig struct {
 		LogLevel        string `overwrite-flag:"logLevel"`
 		ClientsDataPath string `overwrite-flag:"clientsDataPath"`
 		PrivateKeyPath  string `overwrite-flag:"privateKeyPath" validate:"required"`
-		JwtDuration     time.Duration
+		JwtDuration     time.Duration `overwrite-flag:"tokenDuration" validate:"required" flag-usage:"access token duration in seconds"`
 		Metrics         struct {
 			Enabled   bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
 			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
