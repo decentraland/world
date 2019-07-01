@@ -22,6 +22,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
     command: go run cmd/identity/main.go --host=0.0.0.0
+    tty: true
     ports:
       - "9001:9001"
 
@@ -45,6 +46,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
     command: ./bin/wait-for-it identity:9001 -- go run cmd/profile/main.go --connStr=postgres://postgres:password@db/profile?sslmode=disable --host=0.0.0.0
+    tty: true
     ports:
       - "9002:9002"
     depends_on:
@@ -58,10 +60,13 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
     command: ./bin/wait-for-it identity:9001 -- go run cmd/comms/coordinator/main.go --host=0.0.0.0
+    tty: true
     ports:
       - "9000:9000"
     depends_on:
       - identity
+    environment:
+     - DD_AGENT_HOST
 
   worldcomm:
     image: golang:1.12.0
@@ -70,6 +75,22 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
     command: ./bin/wait-for-it coordinator:9000 -- go run cmd/comms/server/main.go
+    tty: true
     depends_on:
       - identity
       - coordinator
+    environment:
+     - DD_AGENT_HOST
+
+  datadog:
+    image: datadog/agent:latest
+    links:
+     - worldcomm
+    environment:
+     - DD_API_KEY
+     - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+     - DD_LOG_LEVEL=error
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /proc/:/host/proc/:ro
+     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro

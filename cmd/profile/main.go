@@ -12,12 +12,14 @@ import (
 	"github.com/decentraland/world/internal/profile"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	logrus "github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
 )
 
 type rootConfig struct {
-	IdentityURL string `overwrite-flag:"authURL" validate:"required"`
-	Profile     struct {
+	LogJSONDisabled bool   `overwrite-flag:"JSONDisabled"`
+	IdentityURL     string `overwrite-flag:"authURL" validate:"required"`
+	Profile         struct {
 		PublicURL string `overwrite-flag:"publicURL" flag-usage:"Example: http://yourDomain.com" validate:"required"`
 		Host      string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 		Port      int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
@@ -35,14 +37,15 @@ type rootConfig struct {
 }
 
 func main() {
-	log := logging.New()
-	router := gin.New()
-	router.Use(ginlogrus.Logger(log), gin.Recovery())
-
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
+
+	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
+	log := logging.New(&loggerConfig)
+	router := gin.New()
+	router.Use(ginlogrus.Logger(log), gin.Recovery())
 
 	if err := logging.SetLevel(log, conf.Profile.LogLevel); err != nil {
 		log.Fatal("error setting log level")

@@ -1,16 +1,10 @@
+logJSONDisabled: true
 identityURL: "http://identity:9001/api/v1"
 profileURL:  "http://profile:9002/api/v1"
 coordinatorURL: "ws://coordinator:9000"
 
 auth0:
   domain:   'dcl-test.auth0.com'
-
-coordinator:
-    host: 'localhost'
-    port: 9000
-    logLevel: 'debug'
-    authTTL: 60
-    serverSecret: "123456"
 
 identity:
     publicURL: "http://identity:9001"
@@ -38,10 +32,23 @@ profile:
         traceName: 'profileService'
         analyticsRateEnabled: false
 
+coordinator:
+    host: 'localhost'
+    port: 9000
+    logLevel: 'debug'
+    authTTL: 60
+    serverSecret: "123456"
+    metrics:
+        enabled: false
+        traceName: 'coordinator-local'
+
 commserver:
     logLevel: 'debug'
     authTTL: 60
     serverSecret: "123456"
+    metrics:
+        enabled: false
+        traceName: 'commserver-local'
 
 cli:
   auth0ClientID: lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx

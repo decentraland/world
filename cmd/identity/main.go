@@ -14,12 +14,13 @@ import (
 	"github.com/decentraland/world/internal/identity/repository"
 	"github.com/decentraland/world/internal/identity/web"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
 )
 
 type rootConfig struct {
-	Auth0 struct {
+	LogJSONDisabled bool `overwrite-flag:"JSONDisabled"`
+	Auth0           struct {
 		Domain string `overwrite-flag:"auth0Domain"`
 	}
 	Identity struct {
@@ -40,18 +41,21 @@ type rootConfig struct {
 }
 
 func main() {
-	l := logging.New()
-	router := gin.New()
-	router.Use(ginlogrus.Logger(l), gin.Recovery())
-
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
-	if err := logging.SetLevel(l, conf.Identity.LogLevel); err != nil {
+	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
+	log := logging.New(&loggerConfig)
+	defer logging.LogPanic()
+
+	if err := logging.SetLevel(log, conf.Identity.LogLevel); err != nil {
 		log.WithError(err).Fatal("Fail to start server")
 	}
+
+	router := gin.New()
+	router.Use(ginlogrus.Logger(log), gin.Recovery())
 
 	log.Info("Starting Server...")
 	key, err := utils.ReadPrivateKeyFromFile(conf.Identity.PrivateKeyPath)
