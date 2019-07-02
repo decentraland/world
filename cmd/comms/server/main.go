@@ -35,6 +35,7 @@ func main() {
 		IdentityURL: conf.IdentityURL,
 		Secret:      conf.CommServer.ServerSecret,
 		RequestTTL:  conf.CommServer.AuthTTL,
+		Log: log,
 	})
 
 	if err != nil {
