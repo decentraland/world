@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"path"
@@ -19,6 +20,7 @@ type AuthenticatorConfig struct {
 	Secret         string
 	IdentityURL    string
 	RequestTTL     int64
+	Log            *logrus.Logger
 }
 
 // Authenticator is the DCL world authenticator, secret will be shared between servers and the
@@ -28,6 +30,7 @@ type Authenticator struct {
 	provider      auth2.AuthProvider
 	authServerURL string
 	connectURL    string
+	log           *logrus.Logger
 }
 
 func joinURL(base string, rel string) (string, error) {
@@ -65,6 +68,7 @@ func MakeAuthenticator(config *AuthenticatorConfig) (*Authenticator, error) {
 		secret:     config.Secret,
 		provider:   authProvider,
 		connectURL: connectURL,
+		log:        config.Log,
 	}
 
 	return a, nil
@@ -88,7 +92,11 @@ func (a *Authenticator) AuthenticateFromMessage(role brokerProtocol.Role, body [
 		credentials["x-access-token"] = authData.AccessToken
 
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte{}}
-		return a.provider.ApproveRequest(&req)
+		ok, err := a.provider.ApproveRequest(&req)
+		if err != nil {
+			a.log.WithError(err).Error("failed to validate request")
+		}
+		return ok, err
 	} else {
 		return false, nil
 	}
@@ -110,7 +118,11 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 
 		content := fmt.Sprintf("GET:%s", a.connectURL)
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte(content)}
-		return a.provider.ApproveRequest(&req)
+		ok, err :=  a.provider.ApproveRequest(&req)
+		if err != nil {
+			a.log.WithError(err).Error("failed to validate request")
+		}
+		return ok, err
 	} else {
 		return false, nil
 	}
