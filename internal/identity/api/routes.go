@@ -154,14 +154,20 @@ func (a *application) token(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("failed to validate user token")
 		switch err := err.(type) {
-		case data.Auth0UnexpectedError:
+		case data.UnauthorizedError:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user"})
+		case data.RateLimitError:
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
+		case data.ForbiddenError:
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		case data.ServiceUnavailableError, data.InternalError:
+			c.Error(err)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service unavailable,  try again later"})
+		default:
 			c.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error,  try again later"})
-			return
-		default:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user"})
-			return
 		}
+		return
 	}
 
 	token, err := a.generator.NewToken(user.UserID, params.PublicKey)

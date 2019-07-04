@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -68,14 +69,14 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	client := http.Client{Timeout: requestTimeout}
 	res, err := client.Do(req)
 	if err != nil {
-		return user, Auth0UnexpectedError{err.Error()}
+		return user, UnexpectedError{err.Error()}
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		getUserInfoResponse := &getUserInfoResponse{}
 		if err := json.NewDecoder(res.Body).Decode(getUserInfoResponse); err != nil {
-			return user, Auth0UnexpectedError{fmt.Sprintf("failed to parse response: %s", err.Error())}
+			return user, UnexpectedError{fmt.Sprintf("failed to parse response: %s", err.Error())}
 		}
 
 		user.Email = getUserInfoResponse.Email
@@ -83,26 +84,88 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 		return user, nil
 	}
 
+	return user, handleErrorResponse(res)
+}
+
+func handleErrorResponse(response *http.Response) error {
 	errorResponse := &authAPIErrorResponse{}
-	if err := json.NewDecoder(res.Body).Decode(errorResponse); err != nil {
-		return user, Auth0UnexpectedError{fmt.Sprintf("failed to parse error: %s", err.Error())}
+	if err := json.NewDecoder(response.Body).Decode(errorResponse); err != nil {
+		return UnexpectedError{fmt.Sprintf("failed to parse error: %s", err.Error())}
 	}
 
-	msg := fmt.Sprintf("%d(%s) %s - %s", res.StatusCode, res.Status, errorResponse.Error, errorResponse.ErrorDescription)
-	return user, Auth0ValidationError{msg}
+	msg := fmt.Sprintf("%d(%s) %s - %s", response.StatusCode, response.Status, errorResponse.Error, errorResponse.ErrorDescription)
+
+	status, _ := strconv.Atoi(response.Status)
+
+	switch status {
+	case http.StatusUnauthorized:
+		return UnauthorizedError{msg}
+	case http.StatusTooManyRequests:
+		return RateLimitError{msg}
+	case http.StatusForbidden:
+		return ForbiddenError{msg}
+	case http.StatusBadRequest:
+		return BadRequestError{msg}
+	case http.StatusInternalServerError:
+		return InternalError{msg}
+	case http.StatusServiceUnavailable:
+		return ServiceUnavailableError{msg}
+	}
+	return UnexpectedError{msg}
 }
 
-type Auth0UnexpectedError struct {
-	Cause string
-}
-type Auth0ValidationError struct {
+type UnauthorizedError struct {
 	Cause string
 }
 
-func (e Auth0UnexpectedError) Error() string {
+func (e UnauthorizedError) Error() string {
 	return e.Cause
 }
 
-func (e Auth0ValidationError) Error() string {
+type ForbiddenError struct {
+	Cause string
+}
+
+func (e ForbiddenError) Error() string {
+	return e.Cause
+}
+
+type RateLimitError struct {
+	Cause string
+}
+
+func (e RateLimitError) Error() string {
+	return e.Cause
+}
+
+type ServiceUnavailableError struct {
+	Cause string
+}
+
+func (e ServiceUnavailableError) Error() string {
+	return e.Cause
+}
+
+type InternalError struct {
+	Cause string
+}
+
+func (e InternalError) Error() string {
+	return e.Cause
+}
+
+type BadRequestError struct {
+	Cause string
+}
+
+func (e BadRequestError) Error() string {
+	return e.Cause
+}
+
+type UnexpectedError struct {
+	Cause string
+}
+
+func (e UnexpectedError) Error() string {
 	return e.Cause
 }
