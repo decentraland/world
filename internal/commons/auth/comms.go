@@ -2,10 +2,11 @@ package auth
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/sirupsen/logrus"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
