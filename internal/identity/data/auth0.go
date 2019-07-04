@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -69,14 +70,14 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	client := http.Client{Timeout: requestTimeout}
 	res, err := client.Do(req)
 	if err != nil {
-		return user, UnexpectedError{err.Error()}
+		return user, err
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		getUserInfoResponse := &getUserInfoResponse{}
 		if err := json.NewDecoder(res.Body).Decode(getUserInfoResponse); err != nil {
-			return user, UnexpectedError{fmt.Sprintf("failed to parse response: %s", err.Error())}
+			return user, err
 		}
 
 		user.Email = getUserInfoResponse.Email
@@ -90,7 +91,7 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 func handleErrorResponse(response *http.Response) error {
 	errorResponse := &authAPIErrorResponse{}
 	if err := json.NewDecoder(response.Body).Decode(errorResponse); err != nil {
-		return UnexpectedError{fmt.Sprintf("failed to parse error: %s", err.Error())}
+		return err
 	}
 
 	msg := fmt.Sprintf("%d(%s) %s - %s", response.StatusCode, response.Status, errorResponse.Error, errorResponse.ErrorDescription)
@@ -111,7 +112,7 @@ func handleErrorResponse(response *http.Response) error {
 	case http.StatusServiceUnavailable:
 		return ServiceUnavailableError{msg}
 	}
-	return UnexpectedError{msg}
+	return errors.New(msg)
 }
 
 type UnauthorizedError struct {
@@ -159,13 +160,5 @@ type BadRequestError struct {
 }
 
 func (e BadRequestError) Error() string {
-	return e.Cause
-}
-
-type UnexpectedError struct {
-	Cause string
-}
-
-func (e UnexpectedError) Error() string {
 	return e.Cause
 }
