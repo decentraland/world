@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 )
 
@@ -51,11 +51,6 @@ func MakeAuth0Service(config Auth0Config) (IAuth0Service, error) {
 	return s, nil
 }
 
-type authAPIErrorResponse struct {
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
 type getUserInfoResponse struct {
 	Sub   string `json:"sub"`
 	Email string `json:"email"`
@@ -89,16 +84,15 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 }
 
 func handleErrorResponse(response *http.Response) error {
-	errorResponse := &authAPIErrorResponse{}
-	if err := json.NewDecoder(response.Body).Decode(errorResponse); err != nil {
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
 		return err
 	}
+	errorMsg := string(bodyBytes)
 
-	msg := fmt.Sprintf("%d(%s) %s - %s", response.StatusCode, response.Status, errorResponse.Error, errorResponse.ErrorDescription)
+	msg := fmt.Sprintf("%d(%s) - %s", response.StatusCode, response.Status, errorMsg)
 
-	status, _ := strconv.Atoi(response.Status)
-
-	switch status {
+	switch response.StatusCode {
 	case http.StatusUnauthorized:
 		return UnauthorizedError{msg}
 	case http.StatusTooManyRequests:
