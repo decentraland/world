@@ -23,12 +23,12 @@ type rootConfig struct {
 		Domain string `overwrite-flag:"auth0Domain"`
 	}
 	Identity struct {
-		PublicURL       string `overwrite-flag:"publicURL" validate:"required"`
-		Host            string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
-		Port            int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
-		LogLevel        string `overwrite-flag:"logLevel"`
-		ClientsDataPath string `overwrite-flag:"clientsDataPath"`
-		PrivateKeyPath  string `overwrite-flag:"privateKeyPath" validate:"required"`
+		PublicURL       string        `overwrite-flag:"publicURL" validate:"required"`
+		Host            string        `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+		Port            int           `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+		LogLevel        string        `overwrite-flag:"logLevel"`
+		ClientsDataPath string        `overwrite-flag:"clientsDataPath"`
+		PrivateKeyPath  string        `overwrite-flag:"privateKeyPath" validate:"required"`
 		JwtDuration     time.Duration `overwrite-flag:"tokenDuration" validate:"required" flag-usage:"access token duration in seconds"`
 		Metrics         struct {
 			Enabled   bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`

@@ -118,7 +118,7 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 
 		content := fmt.Sprintf("GET:%s", a.connectURL)
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte(content)}
-		ok, err :=  a.provider.ApproveRequest(&req)
+		ok, err := a.provider.ApproveRequest(&req)
 		if err != nil {
 			a.log.WithError(err).Error("failed to validate request")
 		}

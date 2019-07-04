@@ -44,7 +44,7 @@ func main() {
 		CoordinatorURL: conf.CoordinatorURL,
 		Secret:         conf.Coordinator.ServerSecret,
 		RequestTTL:     conf.Coordinator.AuthTTL,
-		Log: log,
+		Log:            log,
 	})
 
 	if err != nil {

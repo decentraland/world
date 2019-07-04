@@ -92,7 +92,6 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	return user, Auth0ValidationError{msg}
 }
 
-
 type Auth0UnexpectedError struct {
 	Cause string
 }
