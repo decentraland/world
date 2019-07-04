@@ -2,7 +2,6 @@ package data
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -69,13 +68,15 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	client := http.Client{Timeout: requestTimeout}
 	res, err := client.Do(req)
 	if err != nil {
-		return user, err
+		return user, Auth0UnexpectedError{err.Error()}
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		getUserInfoResponse := &getUserInfoResponse{}
-		json.NewDecoder(res.Body).Decode(getUserInfoResponse)
+		if err := json.NewDecoder(res.Body).Decode(getUserInfoResponse); err != nil {
+			return user, Auth0UnexpectedError{fmt.Sprintf("failed to parse response: %s", err.Error())}
+		}
 
 		user.Email = getUserInfoResponse.Email
 		user.UserID = getUserInfoResponse.Sub
@@ -83,8 +84,26 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	}
 
 	errorResponse := &authAPIErrorResponse{}
-	json.NewDecoder(res.Body).Decode(errorResponse)
+	if err := json.NewDecoder(res.Body).Decode(errorResponse); err != nil {
+		return user, Auth0UnexpectedError{fmt.Sprintf("failed to parse error: %s", err.Error())}
+	}
 
 	msg := fmt.Sprintf("%d(%s) %s - %s", res.StatusCode, res.Status, errorResponse.Error, errorResponse.ErrorDescription)
-	return user, errors.New(msg)
+	return user, Auth0ValidationError{msg}
+}
+
+
+type Auth0UnexpectedError struct {
+	Cause string
+}
+type Auth0ValidationError struct {
+	Cause string
+}
+
+func (e Auth0UnexpectedError) Error() string {
+	return e.Cause
+}
+
+func (e Auth0ValidationError) Error() string {
+	return e.Cause
 }
