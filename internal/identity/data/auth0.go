@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -50,11 +51,6 @@ func MakeAuth0Service(config Auth0Config) (IAuth0Service, error) {
 	return s, nil
 }
 
-type authAPIErrorResponse struct {
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
 type getUserInfoResponse struct {
 	Sub   string `json:"sub"`
 	Email string `json:"email"`
@@ -75,16 +71,88 @@ func (s *Auth0Service) GetUserInfo(accessToken string) (User, error) {
 	defer res.Body.Close()
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		getUserInfoResponse := &getUserInfoResponse{}
-		json.NewDecoder(res.Body).Decode(getUserInfoResponse)
+		if err := json.NewDecoder(res.Body).Decode(getUserInfoResponse); err != nil {
+			return user, err
+		}
 
 		user.Email = getUserInfoResponse.Email
 		user.UserID = getUserInfoResponse.Sub
 		return user, nil
 	}
 
-	errorResponse := &authAPIErrorResponse{}
-	json.NewDecoder(res.Body).Decode(errorResponse)
+	return user, handleErrorResponse(res)
+}
 
-	msg := fmt.Sprintf("%d(%s) %s - %s", res.StatusCode, res.Status, errorResponse.Error, errorResponse.ErrorDescription)
-	return user, errors.New(msg)
+func handleErrorResponse(response *http.Response) error {
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	errorMsg := string(bodyBytes)
+
+	msg := fmt.Sprintf("%d(%s) - %s", response.StatusCode, response.Status, errorMsg)
+
+	switch response.StatusCode {
+	case http.StatusUnauthorized:
+		return UnauthorizedError{msg}
+	case http.StatusTooManyRequests:
+		return RateLimitError{msg}
+	case http.StatusForbidden:
+		return ForbiddenError{msg}
+	case http.StatusBadRequest:
+		return BadRequestError{msg}
+	case http.StatusInternalServerError:
+		return InternalError{msg}
+	case http.StatusServiceUnavailable:
+		return ServiceUnavailableError{msg}
+	}
+	return errors.New(msg)
+}
+
+type UnauthorizedError struct {
+	Cause string
+}
+
+func (e UnauthorizedError) Error() string {
+	return e.Cause
+}
+
+type ForbiddenError struct {
+	Cause string
+}
+
+func (e ForbiddenError) Error() string {
+	return e.Cause
+}
+
+type RateLimitError struct {
+	Cause string
+}
+
+func (e RateLimitError) Error() string {
+	return e.Cause
+}
+
+type ServiceUnavailableError struct {
+	Cause string
+}
+
+func (e ServiceUnavailableError) Error() string {
+	return e.Cause
+}
+
+type InternalError struct {
+	Cause string
+}
+
+func (e InternalError) Error() string {
+	return e.Cause
+}
+
+type BadRequestError struct {
+	Cause string
+}
+
+func (e BadRequestError) Error() string {
+	return e.Cause
 }

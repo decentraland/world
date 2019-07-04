@@ -152,8 +152,21 @@ func (a *application) token(c *gin.Context) {
 	user, err := a.auth0.GetUserInfo(params.UserToken)
 
 	if err != nil {
-		log.WithError(err).Error("unauthorized token")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user"})
+		log.WithError(err).Error("failed to validate user token")
+		switch err := err.(type) {
+		case data.UnauthorizedError:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user"})
+		case data.RateLimitError:
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
+		case data.ForbiddenError:
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		case data.ServiceUnavailableError, data.InternalError:
+			c.Error(err)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service unavailable,  try again later"})
+		default:
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error,  try again later"})
+		}
 		return
 	}
 
@@ -161,7 +174,7 @@ func (a *application) token(c *gin.Context) {
 	if err != nil {
 		c.Error(err)
 		log.WithError(err).Error("failed to sign auth token")
-		c.JSON(http.StatusInternalServerError, "error signing token")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error,  try again later"})
 		return
 	}
 

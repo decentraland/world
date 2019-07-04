@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/decentraland/world/internal/commons/auth"
-	"github.com/decentraland/world/internal/commons/utils"
-	"github.com/decentraland/world/internal/commons/version"
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/decentraland/world/internal/commons/auth"
+	"github.com/decentraland/world/internal/commons/utils"
+	"github.com/decentraland/world/internal/commons/version"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

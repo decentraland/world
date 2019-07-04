@@ -2,10 +2,11 @@ package auth
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/sirupsen/logrus"
 
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
@@ -118,7 +119,7 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 
 		content := fmt.Sprintf("GET:%s", a.connectURL)
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte(content)}
-		ok, err :=  a.provider.ApproveRequest(&req)
+		ok, err := a.provider.ApproveRequest(&req)
 		if err != nil {
 			a.log.WithError(err).Error("failed to validate request")
 		}
