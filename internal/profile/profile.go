@@ -128,6 +128,7 @@ RETURNING version`,
 	})
 
 	v1.OPTIONS("/profile", utils.PrefligthChecksMiddleware("POST, GET", utils.AllHeaders))
+	v1.OPTIONS("/profile/:id", utils.PrefligthChecksMiddleware("GET", utils.AllHeaders))
 
 	v1.GET("/status", utils.ServiceStatusHandler(func() map[string]string {
 		errors := map[string]string{}
