@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
-	github.com/decentraland/auth-go v0.0.0-20190708170312-c838353c48d0
+	github.com/decentraland/auth-go v0.0.0-20190711202538-4b526d5c8f2d
 	github.com/decentraland/webrtc-broker v0.0.0-20190614114758-35a11ee652c4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
@@ -20,7 +20,6 @@ require (
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/lib/pq v1.1.0
-	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
