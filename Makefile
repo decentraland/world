@@ -4,10 +4,8 @@ VERSION := $(shell git rev-list -1 HEAD)
 BUILD_FLAGS = -ldflags '-X github.com/decentraland/world/internal/commons/version.version=$(VERSION)'
 
 build:
-	go build $(BUILD_FLAGS) -o build/profile ./cmd/profile
 	go build $(BUILD_FLAGS) -o build/coordinator ./cmd/comms/coordinator
 	go build $(BUILD_FLAGS) -o build/server ./cmd/comms/server
-	go build $(BUILD_FLAGS) -o build/identity ./cmd/identity
 
 buildall: build
 	go build -o build/cli_bot ./cmd/cli/bot
@@ -20,21 +18,11 @@ fmt:
 
 test:
 	go test -race $(TEST_FLAGS) ./... -count=1
-	PROFILE_TEST_DB_CONN_STR=$(PROFILE_TEST_DB_CONN_STR) go test -race -count=1 $(TEST_FLAGS) -tags=integration github.com/decentraland/world/internal/profile_test
-
-profileci:
-	PROFILE_TEST_DB_CONN_STR=$(PROFILE_TEST_DB_CONN_STR) go test -race -count=1 $(TEST_FLAGS) -tags=integration github.com/decentraland/world/internal/profile_test
-
-identityci:
-	go test -v ./... -count=1
 
 tidy:
 	go mod tidy
 
 compile-protocol:
 	cd pkg/protocol; ${PROTOC} --js_out=import_style=commonjs,binary:. --ts_out=. --go_out=. ./comms.proto
-
-profiledb:
-	psql $(CONN_STR) -f ./internal/profile/db.sql
 
 .PHONY: build

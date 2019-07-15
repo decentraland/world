@@ -1,36 +1,8 @@
-logJSONDisabled: true
-identityURL: "http://identity:9001/api/v1"
-profileURL:  "http://profile:9002/api/v1"
+identityURL: "http://gameauth:9001/api/v1"
 coordinatorURL: "ws://coordinator:9000"
 
 auth0:
   domain:   'dcl-test.auth0.com'
-
-identity:
-    publicURL: "http://identity:9001"
-    host: 'localhost'
-    port: 9001
-    logLevel: 'debug'
-    jwtDuration: 60
-    clientsDataPath: 'config/identity/enabledClients.json'
-    privateKeyPath: "config/identity/devKeys/demoPrivate.key"
-    metrics:
-        enabled: false
-        traceName: 'identityService'
-        analyticsRateEnabled: false
-
-profile:
-    publicURL:  "http://profile:9002"
-    host: 'localhost'
-    port: 9002
-    logLevel: 'debug'
-    connStr: ""
-    schemaDir: "pkg/profile"
-    authTTL: 60
-    metrics:
-        enabled: false
-        traceName: 'profileService'
-        analyticsRateEnabled: false
 
 coordinator:
     host: 'localhost'
@@ -41,6 +13,19 @@ coordinator:
     metrics:
         enabled: false
         traceName: 'coordinator-local'
+
+gameauth:
+    publicURL: "http://gameauth:9001"
+    host: 'localhost'
+    port: 9001
+    logLevel: 'debug'
+    jwtDuration: 60
+    clientsDataPath: 'config/identity/enabledClients.json'
+    privateKeyPath: "config/identity/devKeys/demoPrivate.key"
+    metrics:
+        enabled: false
+        traceName: 'identityService'
+        analyticsRateEnabled: false
 
 commserver:
     logLevel: 'debug'

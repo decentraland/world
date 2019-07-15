@@ -2,8 +2,6 @@
 
 ## Components
 
-- Identity service
-- Profile service
 - Communications coordinator
 - Communications server
 
