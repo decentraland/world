@@ -6,10 +6,9 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/sirupsen/logrus"
-
 	auth2 "github.com/decentraland/auth-go/pkg/auth"
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
+	"github.com/decentraland/world/internal/commons/logging"
 	"github.com/decentraland/world/internal/commons/utils"
 	protocol "github.com/decentraland/world/pkg/protocol"
 	"github.com/golang/protobuf/proto"
@@ -21,7 +20,7 @@ type AuthenticatorConfig struct {
 	Secret         string
 	IdentityURL    string
 	RequestTTL     int64
-	Log            *logrus.Logger
+	Log            *logging.Logger
 }
 
 // Authenticator is the DCL world authenticator, secret will be shared between servers and the
@@ -31,7 +30,7 @@ type Authenticator struct {
 	provider      auth2.AuthProvider
 	authServerURL string
 	connectURL    string
-	log           *logrus.Logger
+	log           *logging.Logger
 }
 
 func joinURL(base string, rel string) (string, error) {

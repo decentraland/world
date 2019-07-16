@@ -4,21 +4,21 @@ import (
 	"fmt"
 
 	"github.com/DataDog/datadog-go/statsd"
-	logrus "github.com/sirupsen/logrus"
+	"github.com/decentraland/world/internal/commons/logging"
 )
 
-type MetricsClient struct {
+type Client struct {
 	client *statsd.Client
-	log    *logrus.Logger
+	log    *logging.Logger
 }
 
-func NewMetricsClient(appName string, log *logrus.Logger) (*MetricsClient, error) {
+func NewClient(appName string, log *logging.Logger) (*Client, error) {
 	client, err := statsd.New("", statsd.WithNamespace(fmt.Sprintf("%s.", appName)))
 	if err != nil {
 		return nil, err
 	}
 
-	c := &MetricsClient{
+	c := &Client{
 		client: client,
 		log:    log,
 	}
@@ -26,23 +26,23 @@ func NewMetricsClient(appName string, log *logrus.Logger) (*MetricsClient, error
 	return c, nil
 }
 
-func (c *MetricsClient) ServiceUp(name string) {
+func (c *Client) ServiceUp(name string) {
 	c.simpleServiceCheck(name, statsd.Ok)
 }
 
-func (c *MetricsClient) GaugeInt(metric string, value int, tags []string) {
+func (c *Client) GaugeInt(metric string, value int, tags []string) {
 	c.gauge(metric, float64(value), tags)
 }
 
-func (c *MetricsClient) GaugeUint32(metric string, value uint32, tags []string) {
+func (c *Client) GaugeUint32(metric string, value uint32, tags []string) {
 	c.gauge(metric, float64(value), tags)
 }
 
-func (c *MetricsClient) GaugeUint64(metric string, value uint64, tags []string) {
+func (c *Client) GaugeUint64(metric string, value uint64, tags []string) {
 	c.gauge(metric, float64(value), tags)
 }
 
-func (c *MetricsClient) Close() {
+func (c *Client) Close() {
 	if err := c.client.Flush(); err != nil {
 		c.log.WithError(err).Error("error flushing DD client")
 	}
@@ -51,12 +51,12 @@ func (c *MetricsClient) Close() {
 	}
 }
 
-func (c *MetricsClient) gauge(metric string, value float64, tags []string) {
+func (c *Client) gauge(metric string, value float64, tags []string) {
 	if err := c.client.Gauge(metric, float64(value), tags, 1); err != nil {
 		c.log.WithError(err).Errorf("error sending metric %s", metric)
 	}
 }
-func (c *MetricsClient) simpleServiceCheck(name string, status statsd.ServiceCheckStatus) {
+func (c *Client) simpleServiceCheck(name string, status statsd.ServiceCheckStatus) {
 	if err := c.client.SimpleServiceCheck(name, status); err != nil {
 		c.log.WithError(err).Errorf("error sending service check %s", name)
 	}

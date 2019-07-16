@@ -74,7 +74,7 @@ func main() {
 		clusterTag := fmt.Sprintf("cluster:%s", conf.Coordinator.Cluster)
 		tags := []string{"env:local", versionTag, clusterTag}
 
-		metricsClient, err := metrics.NewMetricsClient(traceName, log)
+		metricsClient, err := metrics.NewClient(traceName, log)
 		if err != nil {
 			log.WithError(err).Fatal("cannot start metrics agent")
 		}

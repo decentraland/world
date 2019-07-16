@@ -6,6 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Logger = logrus.Logger
+
 // SetLevel set logger level given a string level
 func SetLevel(logger *logrus.Logger, level string) error {
 	lvl, err := logrus.ParseLevel(level)
