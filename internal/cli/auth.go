@@ -112,7 +112,7 @@ func (a *Auth) GetAccessToken(userToken string) (string, error) {
 		return "", err
 	}
 
-	return response["access_token"].(string), nil
+	return response["service_token"].(string), nil
 }
 
 func ExecuteAuthFlow(auth0 *Auth0, auth *Auth) (string, error) {

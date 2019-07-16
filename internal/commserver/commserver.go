@@ -1,7 +1,12 @@
 package commserver
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	"time"
+
+	pq "github.com/lib/pq"
 
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
 	"github.com/decentraland/world/internal/commons/logging"
@@ -18,18 +23,23 @@ var ConnectCoordinator = commserver.ConnectCoordinator
 var ProcessMessagesQueue = commserver.ProcessMessagesQueue
 var Process = commserver.Process
 
+type ReporterConfig struct {
+	LongReportPeriod time.Duration
+	DB               *sql.DB
+	Client           *metrics.Client
+	Cluster          string
+	TraceName        string
+	Log              *logging.Logger
+}
+
 type Reporter struct {
+	longReportPeriod  time.Duration
+	lastLongReport    time.Time
+	db                *sql.DB
 	client            *metrics.Client
 	tags              []string
 	log               *logging.Logger
 	statusCheckMetric string
-}
-
-type ReporterConfig struct {
-	Client    *metrics.Client
-	Cluster   string
-	TraceName string
-	Log       *logging.Logger
 }
 
 func NewReporter(config *ReporterConfig) *Reporter {
@@ -38,6 +48,9 @@ func NewReporter(config *ReporterConfig) *Reporter {
 	tags := []string{"env:local", versionTag, clusterTag}
 
 	return &Reporter{
+		longReportPeriod:  config.LongReportPeriod,
+		lastLongReport:    time.Now(),
+		db:                config.DB,
 		client:            config.Client,
 		tags:              tags,
 		log:               config.Log,
@@ -46,6 +59,14 @@ func NewReporter(config *ReporterConfig) *Reporter {
 }
 
 func (r *Reporter) Report(stats Stats) {
+	if time.Since(r.lastLongReport) > r.longReportPeriod {
+		defer func() {
+			r.lastLongReport = time.Now()
+		}()
+
+		go r.reportDB(r.db, stats)
+	}
+
 	var bytesReceived, bytesSent, messagesSent, messagesReceived uint64
 	stateCount := make(map[commserver.ICEConnectionState]uint32)
 	localCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
@@ -98,4 +119,54 @@ func (r *Reporter) Report(stats Stats) {
 	}
 
 	r.client.ServiceUp(r.statusCheckMetric)
+}
+
+func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
+	if len(stats.Peers) == 0 {
+		return
+	}
+
+	txn, err := db.Begin()
+	if err != nil {
+		r.log.WithError(err).Error("cannot start tx")
+		return
+	}
+
+	stmt, err := txn.Prepare(pq.CopyIn("stats", "peer_alias", "version", "stats"))
+	if err != nil {
+		r.log.WithError(err).Error("cannot prepare statement")
+		return
+	}
+
+	for _, peerStats := range stats.Peers {
+		encodedStats, err := json.Marshal(peerStats)
+		if err != nil {
+			r.log.WithError(err).Error("cannot encode stats as json")
+			continue
+		}
+
+		_, err = stmt.Exec(peerStats.Alias, version.Version(), encodedStats)
+		if err != nil {
+			r.log.WithError(err).Error("cannot exec statement")
+			continue
+		}
+	}
+
+	_, err = stmt.Exec()
+	if err != nil {
+		r.log.WithError(err).Error("cannot finalize statement")
+		return
+	}
+
+	err = stmt.Close()
+	if err != nil {
+		r.log.WithError(err).Error("cannot close statement")
+		return
+	}
+
+	err = txn.Commit()
+	if err != nil {
+		r.log.WithError(err).Error("cannot commit tx")
+		return
+	}
 }

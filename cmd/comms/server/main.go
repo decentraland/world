@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/decentraland/world/internal/commons/metrics"
 	"github.com/decentraland/world/internal/commons/version"
 	"github.com/decentraland/world/internal/commserver"
+	_ "github.com/lib/pq"
 	logrus "github.com/sirupsen/logrus"
 )
 
@@ -23,8 +25,13 @@ type rootConfig struct {
 		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
 		Cluster      string `overwrite-flag:"cluster"`
 		Metrics      struct {
-			Enabled   bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
-			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+			Enabled         bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
+			TraceName       string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+			StatsDBHost     string `overwrite-flag:"statsDBHost"`
+			StatsDBName     string `overwrite-flag:"statsDBName"`
+			StatsDBPort     int    `overwrite-flag:"statsDBPort"`
+			StatsDBUser     string `overwrite-flag:"statsDBUser"`
+			StatsDBPassword string `overwrite-flag:"statsDBPassword"`
 		}
 	}
 }
@@ -67,17 +74,37 @@ func main() {
 
 	if conf.CommServer.Metrics.Enabled {
 		traceName := conf.CommServer.Metrics.TraceName
+
 		client, err := metrics.NewClient(traceName, log)
 		if err != nil {
 			log.WithError(err).Fatal("cannot start metrics agent")
 		}
 		defer client.Close()
 
+		psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			conf.CommServer.Metrics.StatsDBHost,
+			conf.CommServer.Metrics.StatsDBPort,
+			conf.CommServer.Metrics.StatsDBUser,
+			conf.CommServer.Metrics.StatsDBPassword,
+			conf.CommServer.Metrics.StatsDBName)
+		db, err := sql.Open("postgres", psqlConn)
+		if err != nil {
+			log.WithError(err).Fatal("cannot open postgresql connection")
+		}
+		defer db.Close()
+
+		err = db.Ping()
+		if err != nil {
+			log.WithError(err).Fatal("cannot open postgresql connection")
+		}
+
 		reporter := commserver.NewReporter(&commserver.ReporterConfig{
-			Client:    client,
-			TraceName: traceName,
-			Log:       log,
-			Cluster:   conf.CommServer.Cluster,
+			LongReportPeriod: 5 * time.Minute,
+			Client:           client,
+			DB:               db,
+			TraceName:        traceName,
+			Log:              log,
+			Cluster:          conf.CommServer.Cluster,
 		})
 
 		config.Reporter = reporter.Report

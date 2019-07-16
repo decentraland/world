@@ -2,7 +2,7 @@ version: "3.7"
 services:
   gameauth:
     image: decentraland/game-authentication:78d0b4c17c661bc2cb5d68b1c224105b9b2933df
-    command: build/identity
+    command: build/identity --host=0.0.0.0
     ports:
       - "9001:9001"
 
@@ -24,7 +24,7 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it coordinator:9000 -- go run cmd/comms/server/main.go
+    command: ./bin/wait-for-it --coordinator:9000 -- ./bin/wait-for-it db:5432 -- go run cmd/comms/server/main.go --statsDBHost=db --statsDBPort=5432 --statsDBName=statsdb --statsDBUser=postgres --statsDBPassword=password
     tty: true
     depends_on:
       - gameauth
@@ -49,6 +49,8 @@ services:
     image: postgres:latest
     restart: always
     volumes:
+      - ./bin/compose-init-db.sh:/docker-entrypoint-initdb.d/initdb.sh
+      - ./internal/commserver/db.sql:/docker-entrypoint-initdb.d/sql/init_stats.sql
       - ./postgres-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
