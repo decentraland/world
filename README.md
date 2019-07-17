@@ -36,5 +36,5 @@ Note:
 To be able to use this tool locally if you are using docker-compose you may want to add this to your /etc/hosts:
 
 ```
-127.0.0.1 profile identity coordinator
+127.0.0.1 gameauth coordinator
 ```
