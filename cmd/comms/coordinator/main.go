@@ -3,37 +3,47 @@ package main
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/decentraland/world/internal/commons/version"
+	"time"
 
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
+
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
-	"github.com/sirupsen/logrus"
+	"github.com/decentraland/world/internal/commons/metrics"
+	"github.com/decentraland/world/internal/commons/version"
+
+	logrus "github.com/sirupsen/logrus"
 )
 
 type rootConfig struct {
-	IdentityURL    string `overwrite-flag:"authURL" validate:"required"`
-	CoordinatorURL string `overwrite-flag:"coordinatorURL" validate:"required"`
+	LogJSONDisabled bool   `overwrite-flag:"JSONDisabled"`
+	IdentityURL     string `overwrite-flag:"authURL" validate:"required"`
+	CoordinatorURL  string `overwrite-flag:"coordinatorURL" validate:"required"`
 
 	Coordinator struct {
 		Host         string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
 		Port         int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
 		LogLevel     string `overwrite-flag:"logLevel"`
 		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		Cluster      string `overwrite-flag:"cluster"`
 		ServerSecret string `overwrite-flag:"serverSecret" validate:"required"`
+		Metrics      struct {
+			Enabled   bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
+			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+		}
 	}
 }
 
 func main() {
-	log := logging.New()
-	defer logging.LogPanic()
-
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
+
+	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
+	log := logging.New(&loggerConfig)
+	defer logging.LogPanic()
 
 	if err := logging.SetLevel(log, conf.Coordinator.LogLevel); err != nil {
 		log.Fatal("error setting log level")
@@ -52,16 +62,39 @@ func main() {
 	}
 
 	config := coordinator.Config{
-		Auth: coordinatorAuth,
-		Log:  log,
-		Reporter: func(stats *coordinator.Stats) {
+		Auth:         coordinatorAuth,
+		Log:          log,
+		ReportPeriod: 10 * time.Second,
+	}
+
+	if conf.Coordinator.Metrics.Enabled {
+		traceName := conf.Coordinator.Metrics.TraceName
+		statusCheckMetric := fmt.Sprintf("%s-statsOk", traceName)
+		versionTag := fmt.Sprintf("version:%s", version.Version())
+		clusterTag := fmt.Sprintf("cluster:%s", conf.Coordinator.Cluster)
+		tags := []string{"env:local", versionTag, clusterTag}
+
+		metricsClient, err := metrics.NewClient(traceName, log)
+		if err != nil {
+			log.WithError(err).Fatal("cannot start metrics agent")
+		}
+		defer metricsClient.Close()
+
+		config.Reporter = func(stats coordinator.Stats) {
+			metricsClient.GaugeInt("client.count", stats.ClientCount, tags)
+			metricsClient.GaugeInt("server.count", stats.ServerCount, tags)
+			metricsClient.ServiceUp(statusCheckMetric)
+		}
+	} else {
+		config.Reporter = func(stats coordinator.Stats) {
 			log.WithFields(logrus.Fields{
 				"log_type":     "report",
 				"client count": stats.ClientCount,
 				"server count": stats.ServerCount,
 			}).Info("report")
-		},
+		}
 	}
+
 	state := coordinator.MakeState(&config)
 
 	go coordinator.Start(state)

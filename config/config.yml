@@ -1,5 +1,4 @@
-identityURL: "http://identity:9001/api/v1"
-profileURL:  "http://profile:9002/api/v1"
+identityURL: "http://gameauth:9001/api/v1"
 coordinatorURL: "ws://coordinator:9000"
 
 auth0:
@@ -11,9 +10,20 @@ coordinator:
     logLevel: 'debug'
     authTTL: 60
     serverSecret: "123456"
+    metrics:
+        enabled: true
+        traceName: 'coordinator-local'
 
-identity:
-    publicURL: "http://identity:9001"
+commserver:
+    logLevel: 'debug'
+    authTTL: 60
+    serverSecret: "123456"
+    metrics:
+        enabled: true
+        traceName: 'commserver-local'
+
+gameauth:
+    publicURL: "http://gameauth:9001"
     host: 'localhost'
     port: 9001
     logLevel: 'debug'
@@ -23,25 +33,6 @@ identity:
     metrics:
         enabled: false
         traceName: 'identityService'
-        analyticsRateEnabled: false
-
-profile:
-    publicURL:  "http://profile:9002"
-    host: 'localhost'
-    port: 9002
-    logLevel: 'debug'
-    connStr: ""
-    schemaDir: "pkg/profile"
-    authTTL: 60
-    metrics:
-        enabled: false
-        traceName: 'profileService'
-        analyticsRateEnabled: false
-
-commserver:
-    logLevel: 'debug'
-    authTTL: 60
-    serverSecret: "123456"
 
 cli:
   auth0ClientID: lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx

@@ -1,35 +1,53 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"time"
 
-	"github.com/decentraland/world/internal/commons/version"
-
-	"github.com/decentraland/webrtc-broker/pkg/commserver"
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
-	"github.com/sirupsen/logrus"
+	"github.com/decentraland/world/internal/commons/metrics"
+	"github.com/decentraland/world/internal/commons/version"
+	"github.com/decentraland/world/internal/commserver"
+	_ "github.com/lib/pq"
+	logrus "github.com/sirupsen/logrus"
 )
 
 type rootConfig struct {
-	IdentityURL    string `overwrite-flag:"authURL" validate:"required"`
-	CoordinatorURL string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
-	CommServer     struct {
+	LogJSONDisabled bool   `overwrite-flag:"JSONDisabled"`
+	IdentityURL     string `overwrite-flag:"authURL" validate:"required"`
+	CoordinatorURL  string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
+	CommServer      struct {
 		LogLevel     string `overwrite-flag:"logLevel"`
 		ServerSecret string `overwrite-flag:"serverSecret"`
 		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		Cluster      string `overwrite-flag:"cluster"`
+		Metrics      struct {
+			Enabled         bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
+			TraceName       string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+			StatsDBHost     string `overwrite-flag:"statsDBHost"`
+			StatsDBName     string `overwrite-flag:"statsDBName"`
+			StatsDBPort     int    `overwrite-flag:"statsDBPort"`
+			StatsDBUser     string `overwrite-flag:"statsDBUser"`
+			StatsDBPassword string `overwrite-flag:"statsDBPassword"`
+		}
 	}
 }
 
 func main() {
-	log := logging.New()
-	defer logging.LogPanic()
-
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
+
+	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
+	log := logging.New(&loggerConfig)
+	if err := logging.SetLevel(log, conf.CommServer.LogLevel); err != nil {
+		log.Fatal("error setting log level")
+	}
+	defer logging.LogPanic()
 
 	serverAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
 		IdentityURL: conf.IdentityURL,
@@ -37,7 +55,6 @@ func main() {
 		RequestTTL:  conf.CommServer.AuthTTL,
 		Log:         log,
 	})
-
 	if err != nil {
 		log.WithError(err).Fatal("cannot build authenticator")
 	}
@@ -52,17 +69,53 @@ func main() {
 		},
 		CoordinatorURL:         fmt.Sprintf("%s/discover", conf.CoordinatorURL),
 		ExitOnCoordinatorClose: true,
-		Reporter: func(stats *commserver.Stats) {
-			log.WithFields(logrus.Fields{
-				"log_type":    "report",
-				"peer count":  stats.PeerCount,
-				"topic count": stats.TopicCount,
-			}).Info("report")
-		},
+		ReportPeriod:           10 * time.Second,
 	}
 
-	if err := logging.SetLevel(log, conf.CommServer.LogLevel); err != nil {
-		log.Fatal("error setting log level")
+	if conf.CommServer.Metrics.Enabled {
+		traceName := conf.CommServer.Metrics.TraceName
+
+		client, err := metrics.NewClient(traceName, log)
+		if err != nil {
+			log.WithError(err).Fatal("cannot start metrics agent")
+		}
+		defer client.Close()
+
+		psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			conf.CommServer.Metrics.StatsDBHost,
+			conf.CommServer.Metrics.StatsDBPort,
+			conf.CommServer.Metrics.StatsDBUser,
+			conf.CommServer.Metrics.StatsDBPassword,
+			conf.CommServer.Metrics.StatsDBName)
+		db, err := sql.Open("postgres", psqlConn)
+		if err != nil {
+			log.WithError(err).Fatal("cannot open postgresql connection")
+		}
+		defer db.Close()
+
+		err = db.Ping()
+		if err != nil {
+			log.WithError(err).Fatal("cannot open postgresql connection")
+		}
+
+		reporter := commserver.NewReporter(&commserver.ReporterConfig{
+			LongReportPeriod: 5 * time.Minute,
+			Client:           client,
+			DB:               db,
+			TraceName:        traceName,
+			Log:              log,
+			Cluster:          conf.CommServer.Cluster,
+		})
+
+		config.Reporter = reporter.Report
+	} else {
+		config.Reporter = func(stats commserver.Stats) {
+			log.WithFields(logrus.Fields{
+				"log_type":    "report",
+				"peer count":  len(stats.Peers),
+				"topic count": stats.TopicCount,
+			}).Info("report")
+		}
 	}
 
 	state, err := commserver.MakeState(&config)

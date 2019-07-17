@@ -1,8 +1,12 @@
 package logging
 
 import (
+	"runtime/debug"
+
 	"github.com/sirupsen/logrus"
 )
+
+type Logger = logrus.Logger
 
 // SetLevel set logger level given a string level
 func SetLevel(logger *logrus.Logger, level string) error {
@@ -21,20 +25,28 @@ func LogPanic() {
 	if r := recover(); r != nil {
 		err, ok := r.(error)
 		if ok {
+			debug.PrintStack()
 			logrus.WithError(err).Error("panic")
 		}
 	}
 }
 
-// New returns a new logrus Logger with our config
-func New() *logrus.Logger {
-	log := logrus.New()
-	formatter := logrus.JSONFormatter{
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime: "@timestamp",
-		},
-	}
+// LoggerConfig represents the logger config
+type LoggerConfig struct {
+	JSONDisabled bool
+}
 
-	log.SetFormatter(&formatter)
+// New returns a new logrus Logger with our config
+func New(config *LoggerConfig) *logrus.Logger {
+	log := logrus.New()
+	if !config.JSONDisabled {
+		formatter := logrus.JSONFormatter{
+			FieldMap: logrus.FieldMap{
+				logrus.FieldKeyTime: "@timestamp",
+			},
+		}
+
+		log.SetFormatter(&formatter)
+	}
 	return log
 }

@@ -1,55 +1,10 @@
 version: "3.7"
 services:
-
-  # NOTE: we should define the container like this to use the dockerfile
-  # maybe in the future we should have a docker-compose for dev and one for release? (without metrics?)
-  # identity:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   command: ["build/identity", "--host", "0.0.0.0"]
-  #   ports:
-  #     - "9001:9001"
-
-  # NOTE: we are sharing the host modules path, so
-  # 1. ensure to set GOPATH
-  # 2. it's probably more efficient to ensure the deps are installed before running up
-
-  identity:
-    image: golang:1.12.0
-    volumes:
-      - .:/app
-      - $GOPATH/pkg/mod:/go/pkg/mod
-    working_dir: /app
-    command: go run cmd/identity/main.go --host=0.0.0.0
+  gameauth:
+    image: decentraland/game-authentication:78d0b4c17c661bc2cb5d68b1c224105b9b2933df
+    command: build/identity --host=0.0.0.0
     ports:
       - "9001:9001"
-
-  db:
-    image: postgres:latest
-    restart: always
-    volumes:
-      - ./bin/compose-init-db.sh:/docker-entrypoint-initdb.d/initdb.sh
-      - ./internal/profile/db.sql:/docker-entrypoint-initdb.d/sql/init_profile.sql
-      - ./postgres-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    ports:
-      - 5432:5432
-
-  profile:
-    image: golang:1.12.0
-    volumes:
-      - .:/app
-      - $GOPATH/pkg/mod:/go/pkg/mod
-    working_dir: /app
-    command: ./bin/wait-for-it identity:9001 -- go run cmd/profile/main.go --connStr=postgres://postgres:password@db/profile?sslmode=disable --host=0.0.0.0
-    ports:
-      - "9002:9002"
-    depends_on:
-      - identity
-      - db
 
   coordinator:
     image: golang:1.12.0
@@ -57,11 +12,11 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it identity:9001 -- go run cmd/comms/coordinator/main.go --host=0.0.0.0
+    command: ./bin/wait-for-it gameauth:9001 -- go run cmd/comms/coordinator/main.go --host=0.0.0.0
     ports:
       - "9000:9000"
     depends_on:
-      - identity
+      - gameauth
 
   worldcomm:
     image: golang:1.12.0
@@ -69,7 +24,36 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it coordinator:9000 -- go run cmd/comms/server/main.go
+    command: ./bin/wait-for-it --coordinator:9000 -- ./bin/wait-for-it db:5432 -- go run cmd/comms/server/main.go --statsDBHost=db --statsDBPort=5432 --statsDBName=statsdb --statsDBUser=postgres --statsDBPassword=password
+    tty: true
     depends_on:
-      - identity
+      - gameauth
       - coordinator
+    environment:
+     - DD_AGENT_HOST
+
+  datadog:
+    image: datadog/agent:latest
+    links:
+     - worldcomm
+    environment:
+     - DD_API_KEY
+     - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+     - DD_LOG_LEVEL=error
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /proc/:/host/proc/:ro
+     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+
+  db:
+    image: postgres:latest
+    restart: always
+    volumes:
+      - ./bin/compose-init-db.sh:/docker-entrypoint-initdb.d/initdb.sh
+      - ./internal/commserver/db.sql:/docker-entrypoint-initdb.d/sql/init_stats.sql
+      - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - 5432:5432

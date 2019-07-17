@@ -32,14 +32,6 @@ jobs:
             done
             echo Failed waiting for Postgres && exit 1
 
-      - run:
-          name: Run profile test
-          command: make profileci PROFILE_TEST_DB_CONN_STR="postgres://testuser@localhost/testdb?sslmode=disable"
-
-      - run:
-          name: Run identity test
-          command: make identityci
-
       - save_cache:
           key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
