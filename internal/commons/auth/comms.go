@@ -75,13 +75,14 @@ func MakeAuthenticator(config *AuthenticatorConfig) (*Authenticator, error) {
 }
 
 // AuthenticateFromMessage validates an auth message
-func (a *Authenticator) AuthenticateFromMessage(role brokerProtocol.Role, body []byte) (bool, error) {
+func (a *Authenticator) AuthenticateFromMessage(role brokerProtocol.Role, body []byte) (bool, []byte, error) {
+	identity := []byte{}
 	if role == brokerProtocol.Role_COMMUNICATION_SERVER {
-		return a.secret == string(body), nil
+		return a.secret == string(body), identity, nil
 	} else if role == brokerProtocol.Role_CLIENT {
 		authData := protocol.AuthData{}
 		if err := proto.Unmarshal(body, &authData); err != nil {
-			return false, err
+			return false, identity, err
 		}
 
 		credentials := make(map[string]string)
@@ -92,13 +93,25 @@ func (a *Authenticator) AuthenticateFromMessage(role brokerProtocol.Role, body [
 		credentials["x-access-token"] = authData.AccessToken
 
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte{}}
-		ok, err := a.provider.ApproveRequest(&req)
-		if err != nil {
-			a.log.WithError(err).Error("failed to validate request")
+		result, err := a.provider.ApproveRequest(&req)
+
+		if err == nil {
+			return true, []byte(result.GetUserID()), nil
 		}
-		return ok, err
+
+		switch err.(type) {
+		case auth2.MissingCredentialsError,
+			auth2.InvalidCredentialError,
+			auth2.ExpiredRequestError,
+			auth2.InvalidRequestSignatureError,
+			auth2.InvalidAccessTokenError:
+			a.log.WithError(err).Error("failed to validate request")
+			return false, identity, nil
+		default:
+			return false, identity, err
+		}
 	} else {
-		return false, nil
+		return false, identity, nil
 	}
 }
 
@@ -118,11 +131,22 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 
 		content := fmt.Sprintf("GET:%s", a.connectURL)
 		req := auth2.AuthRequest{Credentials: credentials, Content: []byte(content)}
-		ok, err := a.provider.ApproveRequest(&req)
-		if err != nil {
-			a.log.WithError(err).Error("failed to validate request")
+		_, err := a.provider.ApproveRequest(&req)
+		if err == nil {
+			return true, nil
 		}
-		return ok, err
+
+		switch err.(type) {
+		case auth2.MissingCredentialsError,
+			auth2.InvalidCredentialError,
+			auth2.ExpiredRequestError,
+			auth2.InvalidRequestSignatureError,
+			auth2.InvalidAccessTokenError:
+			a.log.WithError(err).Error("failed to validate request")
+			return false, nil
+		default:
+			return false, err
+		}
 	} else {
 		return false, nil
 	}

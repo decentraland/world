@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"net/url"
 	"path"
 	"time"
@@ -29,8 +28,6 @@ const (
 	minParcel  = -150
 )
 
-var avatars = []string{"fox", "round robot", "square robot"}
-
 func nowMs() float64 {
 	return float64(time.Now().UnixNano() / int64(time.Millisecond))
 }
@@ -49,11 +46,6 @@ func min(a int, b int) int {
 	}
 
 	return b
-}
-
-func getRandomAvatar() string {
-	avatar := avatars[rand.Intn(len(avatars))]
-	return avatar
 }
 
 type V3 struct {
@@ -92,6 +84,26 @@ func encodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
 
 	msg := &broker.TopicMessage{
 		Type:  broker.MessageType_TOPIC,
+		Topic: topic,
+		Body:  body,
+	}
+
+	bytes, err := proto.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+}
+
+func encodeTopicIdentityMessage(topic string, data proto.Message) ([]byte, error) {
+	body, err := proto.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &broker.TopicIdentityMessage{
+		Type:  broker.MessageType_TOPIC_IDENTITY,
 		Topic: topic,
 		Body:  body,
 	}
@@ -211,15 +223,6 @@ func StartBot(options *BotOptions) {
 		log.Fatal(errors.New("invalid path, need at least two checkpoints"))
 	}
 
-	var avatar string
-
-	if options.Avatar != nil {
-		avatar = *options.Avatar
-	} else {
-		avatar = getRandomAvatar()
-	}
-
-	peerID := ksuid.New().String()
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,
@@ -233,23 +236,23 @@ func StartBot(options *BotOptions) {
 	if options.TrackStats {
 		trackCh := make(chan []byte, 256)
 		config.OnMessageReceived = func(reliable bool, msgType broker.MessageType, raw []byte) {
-			if !reliable && msgType == broker.MessageType_DATA {
+			if !reliable && msgType == broker.MessageType_TOPIC_FW {
 				trackCh <- raw
 			}
 		}
 
 		go func() {
 			peers := make(map[uint64]*simulation.Stats)
-			dataMessage := broker.DataMessage{}
+			topicFwMessage := broker.TopicFWMessage{}
 			dataHeader := protocol.DataHeader{}
 
 			onMessage := func(rawMsg []byte) {
-				if err := proto.Unmarshal(rawMsg, &dataMessage); err != nil {
+				if err := proto.Unmarshal(rawMsg, &topicFwMessage); err != nil {
 					log.Println("error unmarshalling data message")
 					return
 				}
 
-				if err := proto.Unmarshal(dataMessage.Body, &dataHeader); err != nil {
+				if err := proto.Unmarshal(topicFwMessage.Body, &dataHeader); err != nil {
 					log.Println("error unmarshalling data header")
 					return
 				}
@@ -258,7 +261,7 @@ func StartBot(options *BotOptions) {
 					return
 				}
 
-				alias := dataMessage.FromAlias
+				alias := topicFwMessage.FromAlias
 				stats := peers[alias]
 
 				if stats == nil {
@@ -332,12 +335,10 @@ func StartBot(options *BotOptions) {
 			topic := fmt.Sprintf("profile:%s", hashLocation())
 
 			ms := nowMs()
-			bytes, err := encodeTopicMessage(topic, &protocol.ProfileData{
-				Category:    protocol.Category_PROFILE,
-				Time:        ms,
-				AvatarType:  avatar,
-				DisplayName: peerID,
-				PublicKey:   "key",
+			bytes, err := encodeTopicIdentityMessage(topic, &protocol.ProfileData{
+				Category:       protocol.Category_PROFILE,
+				Time:           ms,
+				ProfileVersion: "1",
 			})
 			if err != nil {
 				log.Fatal("encode profile failed", err)

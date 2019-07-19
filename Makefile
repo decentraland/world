@@ -6,10 +6,7 @@ BUILD_FLAGS = -ldflags '-X github.com/decentraland/world/internal/commons/versio
 build:
 	go build $(BUILD_FLAGS) -o build/coordinator ./cmd/comms/coordinator
 	go build $(BUILD_FLAGS) -o build/server ./cmd/comms/server
-
-buildall: build
 	go build -o build/cli_bot ./cmd/cli/bot
-	go build -o build/cli_keygen ./cmd/cli/keygen
 	go build -o build/cli_profile ./cmd/cli/profile
 
 fmt:
