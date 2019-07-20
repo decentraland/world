@@ -5,7 +5,8 @@ window.addEventListener('load', function() {
     clientID: EXTERNAL_ID,
     redirectUri: CALLBACK_URL,
     responseType: 'token id_token',
-    scope: 'openid email'
+    scope: 'openid',
+    leeway: 60
   });
 
   webAuth.authorize();
