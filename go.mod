@@ -7,7 +7,7 @@ require (
 	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
 	github.com/decentraland/auth-go v0.0.0-20190719132230-f55cf3b8e7f0
-	github.com/decentraland/webrtc-broker v0.0.0-20190731135420-7d18adf51ed3
+	github.com/decentraland/webrtc-broker v0.0.0-20190731193332-8c64084423f2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
@@ -16,7 +16,6 @@ require (
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/golang/protobuf v1.3.1
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/gortc/turn v0.8.0 // indirect
 	github.com/influxdata/influxdb v1.7.7 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/leodido/go-urn v1.1.0 // indirect
@@ -25,7 +24,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/pion/turnc v0.0.6 // indirect
 	github.com/pion/webrtc/v2 v2.0.28-0.20190731124422-7124c22824c6
 	github.com/pkg/errors v0.8.1
 	github.com/segmentio/ksuid v1.0.2
