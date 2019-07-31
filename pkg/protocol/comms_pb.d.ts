@@ -114,14 +114,8 @@ export class ProfileData extends jspb.Message {
   getTime(): number;
   setTime(value: number): void;
 
-  getAvatarType(): string;
-  setAvatarType(value: string): void;
-
-  getDisplayName(): string;
-  setDisplayName(value: string): void;
-
-  getPublicKey(): string;
-  setPublicKey(value: string): void;
+  getProfileVersion(): string;
+  setProfileVersion(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ProfileData.AsObject;
@@ -137,9 +131,7 @@ export namespace ProfileData {
   export type AsObject = {
     category: Category,
     time: number,
-    avatarType: string,
-    displayName: string,
-    publicKey: string,
+    profileVersion: string,
   }
 }
 

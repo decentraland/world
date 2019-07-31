@@ -789,9 +789,7 @@ proto.protocol.ProfileData.toObject = function(includeInstance, msg) {
   var f, obj = {
     category: jspb.Message.getFieldWithDefault(msg, 1, 0),
     time: +jspb.Message.getFieldWithDefault(msg, 2, 0.0),
-    avatarType: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    displayName: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    publicKey: jspb.Message.getFieldWithDefault(msg, 5, "")
+    profileVersion: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -838,15 +836,7 @@ proto.protocol.ProfileData.deserializeBinaryFromReader = function(msg, reader) {
       break;
     case 3:
       var value = /** @type {string} */ (reader.readString());
-      msg.setAvatarType(value);
-      break;
-    case 4:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setDisplayName(value);
-      break;
-    case 5:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setPublicKey(value);
+      msg.setProfileVersion(value);
       break;
     default:
       reader.skipField();
@@ -891,24 +881,10 @@ proto.protocol.ProfileData.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
-  f = message.getAvatarType();
+  f = message.getProfileVersion();
   if (f.length > 0) {
     writer.writeString(
       3,
-      f
-    );
-  }
-  f = message.getDisplayName();
-  if (f.length > 0) {
-    writer.writeString(
-      4,
-      f
-    );
-  }
-  f = message.getPublicKey();
-  if (f.length > 0) {
-    writer.writeString(
-      5,
       f
     );
   }
@@ -946,47 +922,17 @@ proto.protocol.ProfileData.prototype.setTime = function(value) {
 
 
 /**
- * optional string avatar_type = 3;
+ * optional string profile_version = 3;
  * @return {string}
  */
-proto.protocol.ProfileData.prototype.getAvatarType = function() {
+proto.protocol.ProfileData.prototype.getProfileVersion = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
 
 /** @param {string} value */
-proto.protocol.ProfileData.prototype.setAvatarType = function(value) {
+proto.protocol.ProfileData.prototype.setProfileVersion = function(value) {
   jspb.Message.setProto3StringField(this, 3, value);
-};
-
-
-/**
- * optional string display_name = 4;
- * @return {string}
- */
-proto.protocol.ProfileData.prototype.getDisplayName = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
-};
-
-
-/** @param {string} value */
-proto.protocol.ProfileData.prototype.setDisplayName = function(value) {
-  jspb.Message.setProto3StringField(this, 4, value);
-};
-
-
-/**
- * optional string public_key = 5;
- * @return {string}
- */
-proto.protocol.ProfileData.prototype.getPublicKey = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
-};
-
-
-/** @param {string} value */
-proto.protocol.ProfileData.prototype.setPublicKey = function(value) {
-  jspb.Message.setProto3StringField(this, 5, value);
 };
 
 
