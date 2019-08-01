@@ -44,6 +44,7 @@ func main() {
 
 	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
 	log := logging.New(&loggerConfig)
+
 	if err := logging.SetLevel(log, conf.CommServer.LogLevel); err != nil {
 		log.Fatal("error setting log level")
 	}
@@ -99,7 +100,7 @@ func main() {
 		}
 
 		reporter := commserver.NewReporter(&commserver.ReporterConfig{
-			LongReportPeriod: 5 * time.Minute,
+			LongReportPeriod: 10 * time.Minute,
 			Client:           client,
 			DB:               db,
 			TraceName:        traceName,

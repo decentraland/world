@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	logrus "github.com/sirupsen/logrus"
+
 	pq "github.com/lib/pq"
 
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
@@ -83,7 +85,10 @@ func (r *Reporter) Report(stats Stats) {
 
 		peerTag := fmt.Sprintf("peer:%d", peerStats.Alias)
 		stateTags := append([]string{peerTag}, r.tags...)
-		r.client.GaugeUint32("peer.topicCount", peerStats.TopicCount, stateTags)
+
+		if peerStats.TopicCount > 0 {
+			r.client.GaugeUint32("peer.topicCount", peerStats.TopicCount, stateTags)
+		}
 
 		stateCount[peerStats.State]++
 
@@ -119,6 +124,12 @@ func (r *Reporter) Report(stats Stats) {
 	}
 
 	r.client.ServiceUp(r.statusCheckMetric)
+
+	r.log.WithFields(logrus.Fields{
+		"log_type":    "report",
+		"peer count":  len(stats.Peers),
+		"topic count": stats.TopicCount,
+	}).Info("report")
 }
 
 func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
@@ -132,7 +143,7 @@ func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
 		return
 	}
 
-	stmt, err := txn.Prepare(pq.CopyIn("stats", "peer_alias", "version", "stats"))
+	stmt, err := txn.Prepare(pq.CopyIn("stats", "peer_alias", "user_id", "version", "stats"))
 	if err != nil {
 		r.log.WithError(err).Error("cannot prepare statement")
 		return
@@ -145,7 +156,7 @@ func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
 			continue
 		}
 
-		_, err = stmt.Exec(peerStats.Alias, version.Version(), encodedStats)
+		_, err = stmt.Exec(peerStats.Alias, string(peerStats.Identity), version.Version(), encodedStats)
 		if err != nil {
 			r.log.WithError(err).Error("cannot exec statement")
 			continue
