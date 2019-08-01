@@ -84,6 +84,12 @@ func main() {
 			metricsClient.GaugeInt("client.count", stats.ClientCount, tags)
 			metricsClient.GaugeInt("server.count", stats.ServerCount, tags)
 			metricsClient.ServiceUp(statusCheckMetric)
+
+			log.WithFields(logrus.Fields{
+				"log_type":     "report",
+				"client count": stats.ClientCount,
+				"server count": stats.ServerCount,
+			}).Info("report")
 		}
 	} else {
 		config.Reporter = func(stats coordinator.Stats) {
