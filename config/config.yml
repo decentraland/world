@@ -7,6 +7,7 @@ auth0:
 coordinator:
     host: 'localhost'
     port: 9000
+    healthCheckPort: 9080
     logLevel: 'debug'
     authTTL: 60
     serverSecret: "123456"

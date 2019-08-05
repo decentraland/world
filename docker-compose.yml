@@ -15,6 +15,7 @@ services:
     command: ./bin/wait-for-it gameauth:9001 -- go run cmd/comms/coordinator/main.go --host=0.0.0.0
     ports:
       - "9000:9000"
+      - "9080:9080"
     depends_on:
       - gameauth
     environment:

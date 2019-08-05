@@ -22,13 +22,14 @@ type rootConfig struct {
 	CoordinatorURL  string `overwrite-flag:"coordinatorURL" validate:"required"`
 
 	Coordinator struct {
-		Host         string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
-		Port         int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
-		LogLevel     string `overwrite-flag:"logLevel"`
-		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
-		Cluster      string `overwrite-flag:"cluster"`
-		ServerSecret string `overwrite-flag:"serverSecret" validate:"required"`
-		Metrics      struct {
+		Host            string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+		Port            int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+		HealthCheckPort int    `overwrite-flag:"healthCheckPort" validate:"required"`
+		LogLevel        string `overwrite-flag:"logLevel"`
+		AuthTTL         int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		Cluster         string `overwrite-flag:"cluster"`
+		ServerSecret    string `overwrite-flag:"serverSecret" validate:"required"`
+		Metrics         struct {
 			Enabled   bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
 			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
 		}
@@ -104,6 +105,15 @@ func main() {
 	state := coordinator.MakeState(&config)
 
 	go coordinator.Start(state)
+
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.HealthCheckPort)
+		log.Fatal(http.ListenAndServe(addr, mux))
+	}()
 
 	mux := http.NewServeMux()
 	coordinator.Register(state, mux)
