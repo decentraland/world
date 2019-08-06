@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"net/http"
+
+	_ "net/http/pprof"
+
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
@@ -125,6 +129,12 @@ func main() {
 	}
 
 	log.Infof("starting communication server - version: %s", version.Version())
+
+	go func() {
+		addr := fmt.Sprintf("0.0.0.0:9081")
+		log.Info("Starting profiler at ", addr)
+		log.Debug(http.ListenAndServe(addr, nil))
+	}()
 
 	if err := commserver.ConnectCoordinator(state); err != nil {
 		log.Fatal("connect coordinator failure ", err)

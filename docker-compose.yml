@@ -29,6 +29,8 @@ services:
     working_dir: /app
     command: ./bin/wait-for-it --coordinator:9000 -- ./bin/wait-for-it db:5432 -- go run cmd/comms/server/main.go --statsDBHost=db --statsDBPort=5432 --statsDBName=statsdb --statsDBUser=postgres --statsDBPassword=password
     tty: true
+    ports:
+      - "9081:9081"
     depends_on:
       - gameauth
       - coordinator
