@@ -11,6 +11,7 @@ import (
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
 	"github.com/golang/protobuf/proto"
+	logrus "github.com/sirupsen/logrus"
 
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
 
@@ -223,6 +224,8 @@ func StartBot(options *BotOptions) {
 		log.Fatal(errors.New("invalid path, need at least two checkpoints"))
 	}
 
+	log := logrus.New()
+	log.SetLevel(logrus.InfoLevel)
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,
@@ -231,6 +234,7 @@ func StartBot(options *BotOptions) {
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
+		Log: log,
 	}
 
 	if options.TrackStats {

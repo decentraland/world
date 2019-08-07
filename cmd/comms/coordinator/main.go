@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	brokerAuth "github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
 
 	"github.com/decentraland/world/internal/commons/auth"
@@ -27,6 +28,7 @@ type rootConfig struct {
 		HealthCheckPort int    `overwrite-flag:"healthCheckPort" validate:"required"`
 		LogLevel        string `overwrite-flag:"logLevel"`
 		AuthTTL         int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		AuthEnabled     bool   `overwrite-flag:"authEnabled"`
 		Cluster         string `overwrite-flag:"cluster"`
 		ServerSecret    string `overwrite-flag:"serverSecret" validate:"required"`
 		Metrics         struct {
@@ -50,20 +52,26 @@ func main() {
 		log.Fatal("error setting log level")
 	}
 
-	coordinatorAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
-		IdentityURL:    conf.IdentityURL,
-		CoordinatorURL: conf.CoordinatorURL,
-		Secret:         conf.Coordinator.ServerSecret,
-		RequestTTL:     conf.Coordinator.AuthTTL,
-		Log:            log,
-	})
+	var authenticator brokerAuth.CoordinatorAuthenticator
+	var err error
 
-	if err != nil {
-		log.WithError(err).Fatal("cannot build authenticator")
+	if conf.Coordinator.AuthEnabled {
+		authenticator, err = auth.MakeAuthenticator(&auth.AuthenticatorConfig{
+			IdentityURL:    conf.IdentityURL,
+			CoordinatorURL: conf.CoordinatorURL,
+			Secret:         conf.Coordinator.ServerSecret,
+			RequestTTL:     conf.Coordinator.AuthTTL,
+			Log:            log,
+		})
+		if err != nil {
+			log.WithError(err).Fatal("cannot build authenticator")
+		}
+	} else {
+		authenticator = &brokerAuth.NoopAuthenticator{}
 	}
 
 	config := coordinator.Config{
-		Auth:         coordinatorAuth,
+		Auth:         authenticator,
 		Log:          log,
 		ReportPeriod: 10 * time.Second,
 	}

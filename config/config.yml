@@ -10,6 +10,7 @@ coordinator:
     healthCheckPort: 9080
     logLevel: 'debug'
     authTTL: 60
+    authEnabled: true
     serverSecret: "123456"
     metrics:
         enabled: true
@@ -18,6 +19,7 @@ coordinator:
 commserver:
     logLevel: 'debug'
     authTTL: 60
+    authEnabled: true
     serverSecret: "123456"
     metrics:
         enabled: true
