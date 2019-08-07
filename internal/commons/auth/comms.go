@@ -162,6 +162,6 @@ func (a *Authenticator) GenerateServerAuthMessage() (*brokerProtocol.AuthMessage
 }
 
 func (a *Authenticator) GenerateServerConnectURL(coordinatorURL string) (string, error) {
-	u := fmt.Sprintf("%s?secret=%s", coordinatorURL, a.secret)
+	u := fmt.Sprintf("%s/discover?secret=%s", coordinatorURL, a.secret)
 	return u, nil
 }

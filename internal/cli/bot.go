@@ -225,7 +225,7 @@ func StartBot(options *BotOptions) {
 	}
 
 	log := logrus.New()
-	log.SetLevel(logrus.DebugLevel)
+	log.SetLevel(logrus.InfoLevel)
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,

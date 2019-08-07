@@ -9,6 +9,7 @@ import (
 
 	_ "net/http/pprof"
 
+	brokerAuth "github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
@@ -27,6 +28,7 @@ type rootConfig struct {
 		LogLevel     string `overwrite-flag:"logLevel"`
 		ServerSecret string `overwrite-flag:"serverSecret"`
 		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		AuthEnabled  bool   `overwrite-flag:"authEnabled"`
 		Cluster      string `overwrite-flag:"cluster"`
 		Metrics      struct {
 			Enabled         bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
@@ -54,25 +56,32 @@ func main() {
 	}
 	defer logging.LogPanic()
 
-	serverAuth, err := auth.MakeAuthenticator(&auth.AuthenticatorConfig{
-		IdentityURL: conf.IdentityURL,
-		Secret:      conf.CommServer.ServerSecret,
-		RequestTTL:  conf.CommServer.AuthTTL,
-		Log:         log,
-	})
-	if err != nil {
-		log.WithError(err).Fatal("cannot build authenticator")
+	var authenticator brokerAuth.ServerAuthenticator
+	var err error
+
+	if conf.CommServer.AuthEnabled {
+		authenticator, err = auth.MakeAuthenticator(&auth.AuthenticatorConfig{
+			IdentityURL: conf.IdentityURL,
+			Secret:      conf.CommServer.ServerSecret,
+			RequestTTL:  conf.CommServer.AuthTTL,
+			Log:         log,
+		})
+		if err != nil {
+			log.WithError(err).Fatal("cannot build authenticator")
+		}
+	} else {
+		authenticator = &brokerAuth.NoopAuthenticator{}
 	}
 
 	config := commserver.Config{
-		Auth: serverAuth,
+		Auth: authenticator,
 		Log:  log,
 		ICEServers: []commserver.ICEServer{
 			{
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
-		CoordinatorURL:         fmt.Sprintf("%s/discover", conf.CoordinatorURL),
+		CoordinatorURL:         conf.CoordinatorURL,
 		ExitOnCoordinatorClose: true,
 		ReportPeriod:           10 * time.Second,
 	}
