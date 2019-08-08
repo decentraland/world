@@ -7,7 +7,7 @@ services:
       - "9001:9001"
 
   coordinator:
-    image: golang:1.12.0
+    image: golang:1.12.7
     volumes:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
@@ -22,7 +22,7 @@ services:
      - DD_AGENT_HOST
 
   worldcomm:
-    image: golang:1.12.0
+    image: golang:1.12.7
     volumes:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod

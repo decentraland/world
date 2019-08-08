@@ -20,7 +20,7 @@ type AuthenticatorConfig struct {
 	Secret         string
 	IdentityURL    string
 	RequestTTL     int64
-	Log            *logging.Logger
+	Log            logging.Logger
 }
 
 // Authenticator is the DCL world authenticator, secret will be shared between servers and the
@@ -30,7 +30,7 @@ type Authenticator struct {
 	provider      auth2.AuthProvider
 	authServerURL string
 	connectURL    string
-	log           *logging.Logger
+	log           logging.Logger
 }
 
 func joinURL(base string, rel string) (string, error) {
@@ -105,7 +105,7 @@ func (a *Authenticator) AuthenticateFromMessage(role brokerProtocol.Role, body [
 			auth2.ExpiredRequestError,
 			auth2.InvalidRequestSignatureError,
 			auth2.InvalidAccessTokenError:
-			a.log.WithError(err).Error("failed to validate request")
+			a.log.Error().Err(err).Msg("failed to validate request")
 			return false, identity, nil
 		default:
 			return false, identity, err
@@ -142,7 +142,7 @@ func (a *Authenticator) AuthenticateFromURL(role brokerProtocol.Role, r *http.Re
 			auth2.ExpiredRequestError,
 			auth2.InvalidRequestSignatureError,
 			auth2.InvalidAccessTokenError:
-			a.log.WithError(err).Error("failed to validate request")
+			a.log.Error().Err(err).Msg("failed to validate request")
 			return false, nil
 		default:
 			return false, err

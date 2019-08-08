@@ -44,16 +44,15 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
-	log := logging.New(&loggerConfig)
-	defer logging.LogPanic()
-
-	if err := logging.SetLevel(log, conf.Coordinator.LogLevel); err != nil {
-		log.Fatal("error setting log level")
+	loggerConfig := logging.LoggerConfig{Level: conf.Coordinator.LogLevel}
+	log, err := logging.New(&loggerConfig)
+	if err != nil {
+		log.Fatal().Msg("error setting log level")
 	}
 
+	defer logging.LogPanic(log)
+
 	var authenticator brokerAuth.CoordinatorAuthenticator
-	var err error
 
 	if conf.Coordinator.AuthEnabled {
 		authenticator, err = auth.MakeAuthenticator(&auth.AuthenticatorConfig{
@@ -64,7 +63,7 @@ func main() {
 			Log:            log,
 		})
 		if err != nil {
-			log.WithError(err).Fatal("cannot build authenticator")
+			log.Fatal().Err(err).Msg("cannot build authenticator")
 		}
 	} else {
 		authenticator = &brokerAuth.NoopAuthenticator{}
@@ -72,41 +71,37 @@ func main() {
 
 	config := coordinator.Config{
 		Auth:         authenticator,
-		Log:          log,
+		Log:          &log,
 		ReportPeriod: 10 * time.Second,
 	}
 
 	if conf.Coordinator.Metrics.Enabled {
 		traceName := conf.Coordinator.Metrics.TraceName
-		statusCheckMetric := fmt.Sprintf("%s-statsOk", traceName)
 		versionTag := fmt.Sprintf("version:%s", version.Version())
 		clusterTag := fmt.Sprintf("cluster:%s", conf.Coordinator.Cluster)
 		tags := []string{"env:local", versionTag, clusterTag}
 
 		metricsClient, err := metrics.NewClient(traceName, log)
 		if err != nil {
-			log.WithError(err).Fatal("cannot start metrics agent")
+			log.Fatal().Err(err).Msg("cannot start metrics agent")
 		}
 		defer metricsClient.Close()
 
 		config.Reporter = func(stats coordinator.Stats) {
 			metricsClient.GaugeInt("client.count", stats.ClientCount, tags)
 			metricsClient.GaugeInt("server.count", stats.ServerCount, tags)
-			metricsClient.ServiceUp(statusCheckMetric)
 
-			log.WithFields(logrus.Fields{
-				"log_type":     "report",
-				"client count": stats.ClientCount,
-				"server count": stats.ServerCount,
-			}).Info("report")
+			log.Info().Str("log_type", "report").
+				Int("client_count", stats.ClientCount).
+				Int("server_count", stats.ServerCount).
+				Msg("report")
 		}
 	} else {
 		config.Reporter = func(stats coordinator.Stats) {
-			log.WithFields(logrus.Fields{
-				"log_type":     "report",
-				"client count": stats.ClientCount,
-				"server count": stats.ServerCount,
-			}).Info("report")
+			log.Info().Str("log_type", "report").
+				Int("client_count", stats.ClientCount).
+				Int("server_count", stats.ServerCount).
+				Msg("report")
 		}
 	}
 
@@ -120,13 +115,13 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 		})
 		addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.HealthCheckPort)
-		log.Fatal(http.ListenAndServe(addr, mux))
+		log.Fatal().Err(http.ListenAndServe(addr, mux))
 	}()
 
 	mux := http.NewServeMux()
 	coordinator.Register(state, mux)
 
 	addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.Port)
-	log.Infof("starting coordinator %s - version: %s", addr, version.Version())
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Info().Str("addr", addr).Str("version", version.Version()).Msg("starting coordinator")
+	log.Fatal().Err(http.ListenAndServe(addr, mux))
 }
