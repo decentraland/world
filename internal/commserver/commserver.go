@@ -62,9 +62,7 @@ func NewReporter(config *ReporterConfig) *Reporter {
 
 func (r *Reporter) Report(stats Stats) {
 	if time.Since(r.lastLongReport) > r.longReportPeriod {
-		defer func() {
-			r.lastLongReport = time.Now()
-		}()
+		r.lastLongReport = time.Now()
 
 		go r.reportDB(r.db, stats)
 	}

@@ -46,7 +46,7 @@ func main() {
 
 	fmt.Println("starting test: ", conf.CoordinatorURL)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 30; i++ {
 		go startRndBot(conf.CoordinatorURL, false)
 	}
 
