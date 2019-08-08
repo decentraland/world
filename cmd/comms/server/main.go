@@ -48,16 +48,13 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	loggerConfig := logging.LoggerConfig{JSONDisabled: conf.LogJSONDisabled}
-	log := logging.New(&loggerConfig)
-
-	if err := logging.SetLevel(log, conf.CommServer.LogLevel); err != nil {
-		log.Fatal("error setting log level")
+	log, err := logging.New(&logging.LoggerConfig{Level: conf.CommServer.LogLevel})
+	if err != nil {
+		log.Fatal().Msg("error setting log level")
 	}
-	defer logging.LogPanic()
+	defer logging.LogPanic(log)
 
 	var authenticator brokerAuth.ServerAuthenticator
-	var err error
 
 	if conf.CommServer.AuthEnabled {
 		authenticator, err = auth.MakeAuthenticator(&auth.AuthenticatorConfig{
@@ -67,7 +64,7 @@ func main() {
 			Log:         log,
 		})
 		if err != nil {
-			log.WithError(err).Fatal("cannot build authenticator")
+			log.Fatal().Err(err).Msg("cannot build authenticator")
 		}
 	} else {
 		authenticator = &brokerAuth.NoopAuthenticator{}
@@ -75,7 +72,7 @@ func main() {
 
 	config := commserver.Config{
 		Auth: authenticator,
-		Log:  log,
+		Log:  &log,
 		ICEServers: []commserver.ICEServer{
 			{
 				URLs: []string{"stun:stun.l.google.com:19302"},
@@ -91,7 +88,7 @@ func main() {
 
 		client, err := metrics.NewClient(traceName, log)
 		if err != nil {
-			log.WithError(err).Fatal("cannot start metrics agent")
+			log.Fatal().Err(err).Msg("cannot start metrics agent")
 		}
 		defer client.Close()
 
@@ -103,13 +100,13 @@ func main() {
 			conf.CommServer.Metrics.StatsDBName)
 		db, err := sql.Open("postgres", psqlConn)
 		if err != nil {
-			log.WithError(err).Fatal("cannot open postgresql connection")
+			log.Fatal().Err(err).Msg("cannot open postgresql connection")
 		}
 		defer db.Close()
 
 		err = db.Ping()
 		if err != nil {
-			log.WithError(err).Fatal("cannot open postgresql connection")
+			log.Fatal().Err(err).Msg("cannot open postgresql connection")
 		}
 
 		reporter := commserver.NewReporter(&commserver.ReporterConfig{
@@ -124,29 +121,28 @@ func main() {
 		config.Reporter = reporter.Report
 	} else {
 		config.Reporter = func(stats commserver.Stats) {
-			log.WithFields(logrus.Fields{
-				"log_type":    "report",
-				"peer count":  len(stats.Peers),
-				"topic count": stats.TopicCount,
-			}).Info("report")
+			log.Info().Str("log_type", "report").
+				Int("peer_count", len(stats.Peers)).
+				Int("topic_count", stats.TopicCount).
+				Msg("report")
 		}
 	}
 
 	state, err := commserver.MakeState(&config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 	}
 
-	log.Infof("starting communication server - version: %s", version.Version())
+	log.Info().Str("version", version.Version()).Msg("starting communication server")
 
 	go func() {
 		addr := fmt.Sprintf("0.0.0.0:9081")
-		log.Info("Starting profiler at ", addr)
-		log.Debug(http.ListenAndServe(addr, nil))
+		log.Info().Str("address", addr).Msg("Starting profiler")
+		log.Error().Err(http.ListenAndServe(addr, nil))
 	}()
 
 	if err := commserver.ConnectCoordinator(state); err != nil {
-		log.Fatal("connect coordinator failure ", err)
+		log.Fatal().Err(err).Msg("connect coordinator failure")
 	}
 
 	go commserver.ProcessMessagesQueue(state)

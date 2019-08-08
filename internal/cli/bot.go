@@ -6,12 +6,13 @@ import (
 	"log"
 	"math"
 	"net/url"
+	"os"
 	"path"
 	"time"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
 	"github.com/golang/protobuf/proto"
-	logrus "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 
 	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
 
@@ -224,8 +225,7 @@ func StartBot(options *BotOptions) {
 		log.Fatal(errors.New("invalid path, need at least two checkpoints"))
 	}
 
-	log := logrus.New()
-	log.SetLevel(logrus.InfoLevel)
+	log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel)
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,
@@ -252,12 +252,12 @@ func StartBot(options *BotOptions) {
 
 			onMessage := func(rawMsg []byte) {
 				if err := proto.Unmarshal(rawMsg, &topicFwMessage); err != nil {
-					log.Println("error unmarshalling data message")
+					log.Error().Err(err).Msg("error unmarshalling data message")
 					return
 				}
 
 				if err := proto.Unmarshal(topicFwMessage.Body, &dataHeader); err != nil {
-					log.Println("error unmarshalling data header")
+					log.Error().Err(err).Msg("error unmarshalling data header")
 					return
 				}
 
@@ -290,7 +290,7 @@ func StartBot(options *BotOptions) {
 						onMessage(rawMsg)
 					}
 				case <-reportTicker.C:
-					log.Println("Avg duration between position messages")
+					fmt.Println("Avg duration between position messages")
 					for alias, stats := range peers {
 						fmt.Printf("%d: %f ms\n", alias, stats.Avg())
 
@@ -345,7 +345,7 @@ func StartBot(options *BotOptions) {
 				ProfileVersion: "1",
 			})
 			if err != nil {
-				log.Fatal("encode profile failed", err)
+				log.Fatal().Err(err).Msg("encode profile failed")
 			}
 			client.SendReliable <- bytes
 		case <-chatTicker.C:
@@ -359,7 +359,7 @@ func StartBot(options *BotOptions) {
 				Text:      "hi",
 			})
 			if err != nil {
-				log.Fatal("encode chat failed", err)
+				log.Fatal().Err(err).Msg("encode chat failed")
 			}
 			client.SendReliable <- bytes
 		case <-positionTicker.C:
@@ -429,7 +429,7 @@ func StartBot(options *BotOptions) {
 				RotationW: 0,
 			})
 			if err != nil {
-				log.Fatal("encode position failed", err)
+				log.Fatal().Err(err).Msg("encode position failed")
 			}
 
 			client.SendUnreliable <- bytes

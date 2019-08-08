@@ -9,10 +9,10 @@ import (
 
 type Client struct {
 	client *statsd.Client
-	log    *logging.Logger
+	log    logging.Logger
 }
 
-func NewClient(appName string, log *logging.Logger) (*Client, error) {
+func NewClient(appName string, log logging.Logger) (*Client, error) {
 	client, err := statsd.New("", statsd.WithNamespace(fmt.Sprintf("%s.", appName)))
 	if err != nil {
 		return nil, err
@@ -24,10 +24,6 @@ func NewClient(appName string, log *logging.Logger) (*Client, error) {
 	}
 
 	return c, nil
-}
-
-func (c *Client) ServiceUp(name string) {
-	c.simpleServiceCheck(name, statsd.Ok)
 }
 
 func (c *Client) GaugeInt(metric string, value int, tags []string) {
@@ -44,20 +40,15 @@ func (c *Client) GaugeUint64(metric string, value uint64, tags []string) {
 
 func (c *Client) Close() {
 	if err := c.client.Flush(); err != nil {
-		c.log.WithError(err).Error("error flushing DD client")
+		c.log.Error().Err(err).Msg("error flushing DD client")
 	}
 	if err := c.client.Close(); err != nil {
-		c.log.WithError(err).Error("error closing DD client")
+		c.log.Error().Err(err).Msg("error closing DD client")
 	}
 }
 
 func (c *Client) gauge(metric string, value float64, tags []string) {
 	if err := c.client.Gauge(metric, float64(value), tags, 1); err != nil {
-		c.log.WithError(err).Errorf("error sending metric %s", metric)
-	}
-}
-func (c *Client) simpleServiceCheck(name string, status statsd.ServiceCheckStatus) {
-	if err := c.client.SimpleServiceCheck(name, status); err != nil {
-		c.log.WithError(err).Errorf("error sending service check %s", name)
+		c.log.Error().Err(err).Str("name", metric).Msg("error sending metric")
 	}
 }

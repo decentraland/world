@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	logrus "github.com/sirupsen/logrus"
-
 	pq "github.com/lib/pq"
 
 	"github.com/decentraland/webrtc-broker/pkg/commserver"
@@ -31,7 +29,7 @@ type ReporterConfig struct {
 	Client           *metrics.Client
 	Cluster          string
 	TraceName        string
-	Log              *logging.Logger
+	Log              logging.Logger
 }
 
 type Reporter struct {
@@ -40,7 +38,7 @@ type Reporter struct {
 	db                *sql.DB
 	client            *metrics.Client
 	tags              []string
-	log               *logging.Logger
+	log               logging.Logger
 	statusCheckMetric string
 }
 
@@ -121,13 +119,10 @@ func (r *Reporter) Report(stats Stats) {
 		r.client.GaugeUint32("connection.remoteCandidateTypeCount", count, candidateTypeTags)
 	}
 
-	r.client.ServiceUp(r.statusCheckMetric)
-
-	r.log.WithFields(logrus.Fields{
-		"log_type":    "report",
-		"peer count":  len(stats.Peers),
-		"topic count": stats.TopicCount,
-	}).Info("report")
+	r.log.Info().Str("log_type", "report").
+		Int("peer_count", len(stats.Peers)).
+		Int("topic_count", stats.TopicCount).
+		Msg("report")
 }
 
 func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
@@ -137,45 +132,45 @@ func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
 
 	txn, err := db.Begin()
 	if err != nil {
-		r.log.WithError(err).Error("cannot start tx")
+		r.log.Error().Err(err).Msg("cannot start tx")
 		return
 	}
 
 	stmt, err := txn.Prepare(pq.CopyIn("stats", "peer_alias", "user_id", "version", "stats"))
 	if err != nil {
-		r.log.WithError(err).Error("cannot prepare statement")
+		r.log.Error().Err(err).Msg("cannot prepare statement")
 		return
 	}
 
 	for _, peerStats := range stats.Peers {
 		encodedStats, err := json.Marshal(peerStats)
 		if err != nil {
-			r.log.WithError(err).Error("cannot encode stats as json")
+			r.log.Error().Err(err).Msg("cannot encode stats as json")
 			continue
 		}
 
 		_, err = stmt.Exec(peerStats.Alias, string(peerStats.Identity), version.Version(), encodedStats)
 		if err != nil {
-			r.log.WithError(err).Error("cannot exec statement")
+			r.log.Error().Err(err).Msg("cannot exec statement")
 			continue
 		}
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		r.log.WithError(err).Error("cannot finalize statement")
+		r.log.Error().Err(err).Msg("cannot finalize statement")
 		return
 	}
 
 	err = stmt.Close()
 	if err != nil {
-		r.log.WithError(err).Error("cannot close statement")
+		r.log.Error().Err(err).Msg("cannot close statement")
 		return
 	}
 
 	err = txn.Commit()
 	if err != nil {
-		r.log.WithError(err).Error("cannot commit tx")
+		r.log.Error().Err(err).Msg("cannot commit tx")
 		return
 	}
 }

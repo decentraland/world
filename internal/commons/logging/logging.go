@@ -1,52 +1,42 @@
 package logging
 
 import (
+	"os"
 	"runtime/debug"
 
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
-type Logger = logrus.Logger
-
-// SetLevel set logger level given a string level
-func SetLevel(logger *logrus.Logger, level string) error {
-	lvl, err := logrus.ParseLevel(level)
-
-	if err != nil {
-		return err
-	}
-
-	logger.SetLevel(lvl)
-	return nil
-}
+// Logger ...
+type Logger = zerolog.Logger
 
 // LogPanic can be used deferred in the main function to capture panic logs
-func LogPanic() {
+func LogPanic(log Logger) {
 	if r := recover(); r != nil {
 		err, ok := r.(error)
 		if ok {
 			debug.PrintStack()
-			logrus.WithError(err).Error("panic")
+			log.Error().Err(err).Msg("panic")
 		}
 	}
 }
 
 // LoggerConfig represents the logger config
 type LoggerConfig struct {
-	JSONDisabled bool
+	Level string
 }
 
-// New returns a new logrus Logger with our config
-func New(config *LoggerConfig) *logrus.Logger {
-	log := logrus.New()
-	if !config.JSONDisabled {
-		formatter := logrus.JSONFormatter{
-			FieldMap: logrus.FieldMap{
-				logrus.FieldKeyTime: "@timestamp",
-			},
-		}
+// New returns a new logger
+func New(config *LoggerConfig) (Logger, error) {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimestampFieldName = "@timestmap"
 
-		log.SetFormatter(&formatter)
+	logger := zerolog.New(os.Stdout)
+
+	lvl, err := zerolog.ParseLevel(config.Level)
+	if err != nil {
+		return logger, err
 	}
-	return log
+
+	return logger.Level(lvl), nil
 }
