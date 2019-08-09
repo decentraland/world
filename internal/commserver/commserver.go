@@ -94,6 +94,12 @@ func (r *Reporter) Report(stats Stats) {
 		}
 	}
 
+	r.client.GaugeInt("topicCh.size", stats.TopicChSize, r.tags)
+	r.client.GaugeInt("connectCh.size", stats.ConnectChSize, r.tags)
+	r.client.GaugeInt("webrtcControlCh.size", stats.WebRtcControlChSize, r.tags)
+	r.client.GaugeInt("messagesCh.size", stats.MessagesChSize, r.tags)
+	r.client.GaugeInt("unregisterCh.size", stats.UnregisterChSize, r.tags)
+
 	r.client.GaugeInt("connection.count", len(stats.Peers), r.tags)
 	r.client.GaugeInt("topic.count", stats.TopicCount, r.tags)
 	r.client.GaugeUint64("totalBytesReceived", bytesReceived, r.tags)

@@ -1,20 +1,15 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"math"
 	"net/url"
-	"os"
 	"path"
 	"time"
 
 	"github.com/decentraland/auth-go/pkg/ephemeral"
 	"github.com/golang/protobuf/proto"
 	"github.com/rs/zerolog"
-
-	brokerProtocol "github.com/decentraland/webrtc-broker/pkg/protocol"
 
 	"github.com/decentraland/webrtc-broker/pkg/authentication"
 	broker "github.com/decentraland/webrtc-broker/pkg/protocol"
@@ -78,7 +73,7 @@ func (v V3) Normalize() V3 {
 	return v.ScalarProd(1 / len)
 }
 
-func encodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
+func EncodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
 	body, err := proto.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -98,7 +93,7 @@ func encodeTopicMessage(topic string, data proto.Message) ([]byte, error) {
 	return bytes, nil
 }
 
-func encodeTopicIdentityMessage(topic string, data proto.Message) ([]byte, error) {
+func EncodeTopicIdentityMessage(topic string, data proto.Message) ([]byte, error) {
 	body, err := proto.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -149,7 +144,7 @@ func (a *ClientAuthenticator) getAccessToken() (string, error) {
 	return ExecuteAuthFlow(&auth0, &auth)
 }
 
-func (a *ClientAuthenticator) GenerateClientAuthMessage() (*brokerProtocol.AuthMessage, error) {
+func (a *ClientAuthenticator) GenerateClientAuthMessage() (*broker.AuthMessage, error) {
 	accessToken, err := a.getAccessToken()
 	if err != nil {
 		return nil, err
@@ -174,9 +169,9 @@ func (a *ClientAuthenticator) GenerateClientAuthMessage() (*brokerProtocol.AuthM
 		return nil, err
 	}
 
-	m := &brokerProtocol.AuthMessage{
-		Type: brokerProtocol.MessageType_AUTH,
-		Role: brokerProtocol.Role_CLIENT,
+	m := &broker.AuthMessage{
+		Type: broker.MessageType_AUTH,
+		Role: broker.Role_CLIENT,
 		Body: encodedData,
 	}
 
@@ -214,18 +209,19 @@ func (a *ClientAuthenticator) GenerateClientConnectURL(coordinatorURL string) (s
 type BotOptions struct {
 	Auth           authentication.ClientAuthenticator
 	CoordinatorURL string
-	Avatar         *string
 	Checkpoints    []V3
 	DurationMs     uint
+	Log            zerolog.Logger
 	TrackStats     bool
 }
 
 func StartBot(options *BotOptions) {
+	log := options.Log
+
 	if len(options.Checkpoints) < 2 {
-		log.Fatal(errors.New("invalid path, need at least two checkpoints"))
+		log.Fatal().Msg("invalid path, need at least two checkpoints")
 	}
 
-	log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel)
 	config := simulation.Config{
 		Auth:           options.Auth,
 		CoordinatorURL: options.CoordinatorURL,
@@ -292,7 +288,7 @@ func StartBot(options *BotOptions) {
 				case <-reportTicker.C:
 					fmt.Println("Avg duration between position messages")
 					for alias, stats := range peers {
-						fmt.Printf("%d: %f ms\n", alias, stats.Avg())
+						fmt.Printf("%d: %f ms (%d messages)\n", alias, stats.Avg(), stats.Samples())
 
 						if time.Since(stats.LastSeen).Seconds() > 1 {
 							delete(peers, alias)
@@ -339,7 +335,7 @@ func StartBot(options *BotOptions) {
 			topic := fmt.Sprintf("profile:%s", hashLocation())
 
 			ms := nowMs()
-			bytes, err := encodeTopicIdentityMessage(topic, &protocol.ProfileData{
+			bytes, err := EncodeTopicIdentityMessage(topic, &protocol.ProfileData{
 				Category:       protocol.Category_PROFILE,
 				Time:           ms,
 				ProfileVersion: "1",
@@ -352,7 +348,7 @@ func StartBot(options *BotOptions) {
 			topic := fmt.Sprintf("chat:%s", hashLocation())
 
 			ms := nowMs()
-			bytes, err := encodeTopicMessage(topic, &protocol.ChatData{
+			bytes, err := EncodeTopicMessage(topic, &protocol.ChatData{
 				Category:  protocol.Category_CHAT,
 				Time:      ms,
 				MessageId: ksuid.New().String(),
@@ -417,7 +413,7 @@ func StartBot(options *BotOptions) {
 
 			topic := fmt.Sprintf("position:%s", hashLocation())
 			ms := nowMs()
-			bytes, err := encodeTopicMessage(topic, &protocol.PositionData{
+			bytes, err := EncodeTopicMessage(topic, &protocol.PositionData{
 				Category:  protocol.Category_POSITION,
 				Time:      ms,
 				PositionX: float32(p.X),
