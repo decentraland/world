@@ -21,16 +21,6 @@ Start a bot that will walk around the world and send messages:
 build/cli_bot --email= --password= --auth0ClientSecret= --keyPath=./keys/client.key
 ```
 
-Store a given json as user's profile:
-```
-cat profile | build/cli_profile --store --email= --password= --auth0ClientSecret= --keyPath./keys/client.key=
-```
-
-Retrieve user's profile:
-```
-build/cli_profile --retrieve --email= --password= --auth0ClientSecret= --keyPath=./keys/client.key
-```
-
 Note:
 
 To be able to use this tool locally if you are using docker-compose you may want to add this to your /etc/hosts:
