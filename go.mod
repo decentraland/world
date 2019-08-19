@@ -7,7 +7,7 @@ require (
 	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
 	github.com/decentraland/auth-go v0.0.0-20190719132230-f55cf3b8e7f0
-	github.com/decentraland/webrtc-broker v0.0.0-20190816191032-739f854ef0ee
+	github.com/decentraland/webrtc-broker v0.0.0-20190819121445-f84e84264814
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
 	github.com/gin-gonic/gin v1.3.0
@@ -23,7 +23,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/pion/webrtc/v2 v2.1.3-0.20190816002428-d1e18d41d4d3
+	github.com/pion/webrtc/v2 v2.1.3-0.20190819063201-36f913160af8
 	github.com/pkg/errors v0.8.1
 	github.com/rs/zerolog v1.14.3
 	github.com/segmentio/ksuid v1.0.2
