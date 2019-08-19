@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	_ "net/http/pprof"
+
 	brokerAuth "github.com/decentraland/webrtc-broker/pkg/authentication"
 	"github.com/decentraland/webrtc-broker/pkg/coordinator"
 
@@ -106,6 +108,12 @@ func main() {
 	}
 
 	state := coordinator.MakeState(&config)
+
+	go func() {
+		addr := fmt.Sprintf("0.0.0.0:9081")
+		log.Info().Str("address", addr).Msg("Starting profiler")
+		log.Error().Err(http.ListenAndServe(addr, nil))
+	}()
 
 	go coordinator.Start(state)
 

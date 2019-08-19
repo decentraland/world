@@ -13,6 +13,7 @@ import (
 
 type rootConfig struct {
 	CoordinatorURL string `overwrite-flag:"coordinatorURL" validate:"required"`
+	SpawnObserver  bool   `overwrite-flag:"observer"`
 }
 
 func main() {
@@ -36,12 +37,16 @@ func main() {
 		})
 	}
 
-	log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel).With().Str("name", "observer").Logger()
-	commtest.StartBot(commtest.Options{
-		CoordinatorURL: conf.CoordinatorURL,
-		Topic:          "testtopic",
-		Subscription:   map[string]bool{"testtopic": true},
-		TrackStats:     true,
-		Log:            log,
-	})
+	if conf.SpawnObserver {
+		log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel).With().Str("name", "observer").Logger()
+		commtest.StartBot(commtest.Options{
+			CoordinatorURL: conf.CoordinatorURL,
+			Topic:          "testtopic",
+			Subscription:   map[string]bool{"testtopic": true},
+			TrackStats:     true,
+			Log:            log,
+		})
+	} else {
+		select {}
+	}
 }

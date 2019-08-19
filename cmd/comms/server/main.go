@@ -31,13 +31,17 @@ type rootConfig struct {
 		AuthEnabled  bool   `overwrite-flag:"authEnabled"`
 		Cluster      string `overwrite-flag:"cluster"`
 		Metrics      struct {
-			Enabled         bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
-			TraceName       string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+			DDEnabled bool   `overwrite-flag:"ddMetrics" flag-usage:"enable dd metrics"`
+			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
+
+			DBEnabled       bool   `overwrite-flag:"dbMetrics" flag-usage:"enable db metrics"`
 			StatsDBHost     string `overwrite-flag:"statsDBHost"`
 			StatsDBName     string `overwrite-flag:"statsDBName"`
 			StatsDBPort     int    `overwrite-flag:"statsDBPort"`
 			StatsDBUser     string `overwrite-flag:"statsDBUser"`
 			StatsDBPassword string `overwrite-flag:"statsDBPassword"`
+
+			DebugEnabled bool `overwrite-flag:"debugMetrics" flag-usage:"enable debug metrics"`
 		}
 	}
 }
@@ -83,15 +87,24 @@ func main() {
 		ReportPeriod:           10 * time.Second,
 	}
 
-	if conf.CommServer.Metrics.Enabled {
-		traceName := conf.CommServer.Metrics.TraceName
+	reportConfig := commserver.ReporterConfig{
+		LongReportPeriod: 10 * time.Minute,
+		Log:              log,
+		Cluster:          conf.CommServer.Cluster,
+		DebugModeEnabled: conf.CommServer.Metrics.DebugEnabled,
+	}
 
-		client, err := metrics.NewClient(traceName, log)
+	if conf.CommServer.Metrics.DDEnabled {
+		client, err := metrics.NewClient(conf.CommServer.Metrics.TraceName, log)
 		if err != nil {
 			log.Fatal().Err(err).Msg("cannot start metrics agent")
 		}
 		defer client.Close()
 
+		reportConfig.DDClient = client
+	}
+
+	if conf.CommServer.Metrics.DBEnabled {
 		psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			conf.CommServer.Metrics.StatsDBHost,
 			conf.CommServer.Metrics.StatsDBPort,
@@ -109,24 +122,11 @@ func main() {
 			log.Fatal().Err(err).Msg("cannot open postgresql connection")
 		}
 
-		reporter := commserver.NewReporter(&commserver.ReporterConfig{
-			LongReportPeriod: 10 * time.Minute,
-			Client:           client,
-			DB:               db,
-			TraceName:        traceName,
-			Log:              log,
-			Cluster:          conf.CommServer.Cluster,
-		})
-
-		config.Reporter = reporter.Report
-	} else {
-		config.Reporter = func(stats commserver.Stats) {
-			log.Info().Str("log_type", "report").
-				Int("peer_count", len(stats.Peers)).
-				Int("topic_count", stats.TopicCount).
-				Msg("report")
-		}
+		reportConfig.DB = db
 	}
+
+	reporter := commserver.NewReporter(&reportConfig)
+	config.Reporter = reporter.Report
 
 	state, err := commserver.MakeState(&config)
 	if err != nil {
