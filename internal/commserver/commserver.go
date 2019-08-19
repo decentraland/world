@@ -26,20 +26,32 @@ var Process = commserver.Process
 type ReporterConfig struct {
 	LongReportPeriod time.Duration
 	DB               *sql.DB
-	Client           *metrics.Client
+	DDClient         *metrics.Client
 	Cluster          string
-	TraceName        string
 	Log              logging.Logger
+	DebugModeEnabled bool
 }
 
 type Reporter struct {
-	longReportPeriod  time.Duration
-	lastLongReport    time.Time
-	db                *sql.DB
-	client            *metrics.Client
-	tags              []string
-	log               logging.Logger
-	statusCheckMetric string
+	longReportPeriod time.Duration
+	lastLongReport   time.Time
+	db               *sql.DB
+	ddClient         *metrics.Client
+	tags             []string
+	log              logging.Logger
+	debugModeEnabled bool
+
+	lastBytesReceivedByDC uint64
+	lastBytesSentByDC     uint64
+
+	lastBytesReceivedBySCTP uint64
+	lastBytesSentBySCTP     uint64
+
+	lastBytesReceivedByICE uint64
+	lastBytesSentByICE     uint64
+
+	lastMessagesSentByDC     uint64
+	lastMessagesReceivedByDC uint64
 }
 
 func NewReporter(config *ReporterConfig) *Reporter {
@@ -48,42 +60,55 @@ func NewReporter(config *ReporterConfig) *Reporter {
 	tags := []string{"env:local", versionTag, clusterTag}
 
 	return &Reporter{
-		longReportPeriod:  config.LongReportPeriod,
-		lastLongReport:    time.Now(),
-		db:                config.DB,
-		client:            config.Client,
-		tags:              tags,
-		log:               config.Log,
-		statusCheckMetric: fmt.Sprintf("%s-statsOk", config.TraceName),
+		longReportPeriod: config.LongReportPeriod,
+		lastLongReport:   time.Now(),
+		db:               config.DB,
+		ddClient:         config.DDClient,
+		tags:             tags,
+		log:              config.Log,
+		debugModeEnabled: config.DebugModeEnabled,
 	}
 }
 
 func (r *Reporter) Report(stats Stats) {
-	if time.Since(r.lastLongReport) > r.longReportPeriod {
+	if r.db != nil && time.Since(r.lastLongReport) > r.longReportPeriod {
 		r.lastLongReport = time.Now()
 
 		go r.reportDB(r.db, stats)
 	}
 
-	var bytesReceived, bytesSent, messagesSent, messagesReceived uint64
+	var bytesReceivedReliable, bytesSentReliable, messagesSentReliable, messagesReceivedReliable uint64
+	var bytesReceivedUnreliable, bytesSentUnreliable, messagesSentUnreliable, messagesReceivedUnreliable uint64
+
+	var sctpTransportBytesSent, sctpTransportBytesReceived uint64
+	var iceTransportBytesSent, iceTransportBytesReceived uint64
+
 	stateCount := make(map[commserver.ICEConnectionState]uint32)
 	localCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
 	remoteCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
 
 	for _, peerStats := range stats.Peers {
-		bytesReceived += peerStats.ReliableBytesReceived + peerStats.UnreliableBytesReceived
-		bytesSent += peerStats.ReliableBytesSent + peerStats.UnreliableBytesSent
+		bytesSentReliable += peerStats.ReliableBytesSent
+		bytesReceivedReliable += peerStats.ReliableBytesReceived
+		messagesSentReliable += uint64(peerStats.ReliableMessagesSent)
+		messagesReceivedReliable += uint64(peerStats.ReliableMessagesReceived)
 
-		messagesReceived += uint64(peerStats.ReliableMessagesReceived +
-			peerStats.UnreliableMessagesReceived)
-		messagesSent += uint64(peerStats.ReliableMessagesSent +
-			peerStats.UnreliableMessagesSent)
+		bytesSentUnreliable += peerStats.UnreliableBytesSent
+		bytesReceivedUnreliable += peerStats.UnreliableBytesReceived
+		messagesSentUnreliable += uint64(peerStats.UnreliableMessagesSent)
+		messagesReceivedUnreliable += uint64(peerStats.UnreliableMessagesReceived)
+
+		sctpTransportBytesSent += peerStats.SCTPTransportBytesSent
+		sctpTransportBytesReceived += peerStats.SCTPTransportBytesReceived
+
+		iceTransportBytesSent += peerStats.ICETransportBytesSent
+		iceTransportBytesReceived += peerStats.ICETransportBytesReceived
 
 		peerTag := fmt.Sprintf("peer:%d", peerStats.Alias)
 		stateTags := append([]string{peerTag}, r.tags...)
 
-		if peerStats.TopicCount > 0 {
-			r.client.GaugeUint32("peer.topicCount", peerStats.TopicCount, stateTags)
+		if r.ddClient != nil && peerStats.TopicCount > 0 {
+			r.ddClient.GaugeUint32("peer.topicCount", peerStats.TopicCount, stateTags)
 		}
 
 		stateCount[peerStats.State]++
@@ -94,41 +119,82 @@ func (r *Reporter) Report(stats Stats) {
 		}
 	}
 
-	r.client.GaugeInt("topicCh.size", stats.TopicChSize, r.tags)
-	r.client.GaugeInt("connectCh.size", stats.ConnectChSize, r.tags)
-	r.client.GaugeInt("webrtcControlCh.size", stats.WebRtcControlChSize, r.tags)
-	r.client.GaugeInt("messagesCh.size", stats.MessagesChSize, r.tags)
-	r.client.GaugeInt("unregisterCh.size", stats.UnregisterChSize, r.tags)
+	bytesReceivedByDC := bytesReceivedReliable + bytesReceivedUnreliable
+	bytesSentByDC := bytesSentReliable + bytesSentUnreliable
 
-	r.client.GaugeInt("connection.count", len(stats.Peers), r.tags)
-	r.client.GaugeInt("topic.count", stats.TopicCount, r.tags)
-	r.client.GaugeUint64("totalBytesReceived", bytesReceived, r.tags)
-	r.client.GaugeUint64("totalBytesSent", bytesSent, r.tags)
-	r.client.GaugeUint64("totalMessagesSent", messagesSent, r.tags)
-	r.client.GaugeUint64("totalMessagesReceived", messagesReceived, r.tags)
+	messagesReceivedByDC := messagesReceivedReliable + messagesReceivedUnreliable
+	messagesSentByDC := messagesSentReliable + messagesSentUnreliable
 
-	for connState, count := range stateCount {
-		stateTag := fmt.Sprintf("state:%s", connState.String())
-		stateTags := append([]string{stateTag}, r.tags...)
-		r.client.GaugeUint32("connection.stateCount", count, stateTags)
+	if r.ddClient != nil {
+		r.ddClient.GaugeInt("topicCh.size", stats.TopicChSize, r.tags)
+		r.ddClient.GaugeInt("connectCh.size", stats.ConnectChSize, r.tags)
+		r.ddClient.GaugeInt("webrtcControlCh.size", stats.WebRtcControlChSize, r.tags)
+		r.ddClient.GaugeInt("messagesCh.size", stats.MessagesChSize, r.tags)
+		r.ddClient.GaugeInt("unregisterCh.size", stats.UnregisterChSize, r.tags)
+
+		r.ddClient.GaugeInt("connection.count", len(stats.Peers), r.tags)
+		r.ddClient.GaugeInt("topic.count", stats.TopicCount, r.tags)
+
+		r.ddClient.GaugeUint64("totalBytesReceived", bytesReceivedByDC, r.tags)
+		r.ddClient.GaugeUint64("totalBytesSent", bytesSentByDC, r.tags)
+
+		r.ddClient.GaugeUint64("totalMessagesSent", messagesSentByDC, r.tags)
+		r.ddClient.GaugeUint64("totalMessagesReceived", messagesReceivedByDC, r.tags)
+
+		r.ddClient.GaugeUint64("totalBytesReceivedSCTP", sctpTransportBytesReceived, r.tags)
+		r.ddClient.GaugeUint64("totalBytesSentSCTP", sctpTransportBytesSent, r.tags)
+
+		r.ddClient.GaugeUint64("totalBytesReceivedICE", iceTransportBytesReceived, r.tags)
+		r.ddClient.GaugeUint64("totalBytesSentICE", iceTransportBytesSent, r.tags)
+
+		for connState, count := range stateCount {
+			stateTag := fmt.Sprintf("state:%s", connState.String())
+			stateTags := append([]string{stateTag}, r.tags...)
+			r.ddClient.GaugeUint32("connection.stateCount", count, stateTags)
+		}
+
+		for localCandidateType, count := range localCandidateTypeCount {
+			candidateTypeTag := fmt.Sprintf("candidateType:%s", localCandidateType.String())
+			candidateTypeTags := append([]string{candidateTypeTag}, r.tags...)
+			r.ddClient.GaugeUint32("connection.localCandidateTypeCount", count, candidateTypeTags)
+		}
+
+		for remoteCandidateType, count := range remoteCandidateTypeCount {
+			candidateTypeTag := fmt.Sprintf("candidateType:%s", remoteCandidateType.String())
+			candidateTypeTags := append([]string{candidateTypeTag}, r.tags...)
+			r.ddClient.GaugeUint32("connection.remoteCandidateTypeCount", count, candidateTypeTags)
+		}
 	}
 
-	for localCandidateType, count := range localCandidateTypeCount {
-		candidateTypeTag := fmt.Sprintf("candidateType:%s", localCandidateType.String())
-		candidateTypeTags := append([]string{candidateTypeTag}, r.tags...)
-		r.client.GaugeUint32("connection.localCandidateTypeCount", count, candidateTypeTags)
-	}
+	if r.debugModeEnabled {
+		r.log.Info().Str("log_type", "sent_stats").
+			Uint64("avg bytes sent per second [DC]", (bytesSentByDC-r.lastBytesSentByDC)/10).
+			Uint64("avg messages sent per second [DC]", (messagesSentByDC-r.lastMessagesSentByDC)/10).
+			Uint64("avg bytes sent per second [ICE]", (iceTransportBytesSent-r.lastBytesSentByICE)/10).
+			Uint64("avg bytes sent per second [SCTP]", (sctpTransportBytesSent-r.lastBytesSentBySCTP)/10).
+			Msg("")
 
-	for remoteCandidateType, count := range remoteCandidateTypeCount {
-		candidateTypeTag := fmt.Sprintf("candidateType:%s", remoteCandidateType.String())
-		candidateTypeTags := append([]string{candidateTypeTag}, r.tags...)
-		r.client.GaugeUint32("connection.remoteCandidateTypeCount", count, candidateTypeTags)
-	}
+		r.log.Info().Str("log_type", "recv_stats").
+			Uint64("avg bytes received per second [DC]", (bytesReceivedByDC-r.lastBytesReceivedByDC)/10).
+			Uint64("avg messages received per second [DC]", (messagesReceivedByDC-r.lastMessagesReceivedByDC)/10).
+			Uint64("avg bytes received per second [ICE]", (iceTransportBytesReceived-r.lastBytesReceivedByICE)/10).
+			Uint64("avg bytes received per second [SCTP]", (sctpTransportBytesReceived-r.lastBytesReceivedBySCTP)/10).
+			Msg("")
 
-	r.log.Info().Str("log_type", "report").
-		Int("peer_count", len(stats.Peers)).
-		Int("topic_count", stats.TopicCount).
-		Msg("report")
+		r.lastBytesReceivedByDC = bytesReceivedByDC
+		r.lastBytesSentByDC = bytesSentByDC
+		r.lastBytesReceivedBySCTP = sctpTransportBytesReceived
+		r.lastBytesSentBySCTP = sctpTransportBytesSent
+		r.lastBytesReceivedByICE = iceTransportBytesReceived
+		r.lastBytesSentByICE = iceTransportBytesSent
+		r.lastMessagesSentByDC = messagesSentByDC
+		r.lastMessagesReceivedByDC = messagesReceivedByDC
+
+		r.log.Info().Str("log_type", "report").
+			Int("peer_count", len(stats.Peers)).
+			Int("topic_count", stats.TopicCount).
+			Msg("report")
+	}
 }
 
 func (r *Reporter) reportDB(db *sql.DB, stats Stats) {

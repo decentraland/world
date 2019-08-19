@@ -32,7 +32,7 @@ func main() {
 			opts := commtest.Options{
 				CoordinatorURL: conf.CoordinatorURL,
 				Subscription:   subscription,
-				Topic: topic,
+				Topic:          topic,
 			}
 
 			if j == 0 {
@@ -48,5 +48,5 @@ func main() {
 		}
 	}
 
-	select{}
+	select {}
 }
