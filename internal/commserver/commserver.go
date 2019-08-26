@@ -167,18 +167,17 @@ func (r *Reporter) Report(stats Stats) {
 	}
 
 	if r.debugModeEnabled {
-		r.log.Info().Str("log_type", "sent_stats").
-			Uint64("avg bytes sent per second [DC]", (bytesSentByDC-r.lastBytesSentByDC)/10).
-			Uint64("avg messages sent per second [DC]", (messagesSentByDC-r.lastMessagesSentByDC)/10).
-			Uint64("avg bytes sent per second [ICE]", (iceTransportBytesSent-r.lastBytesSentByICE)/10).
-			Uint64("avg bytes sent per second [SCTP]", (sctpTransportBytesSent-r.lastBytesSentBySCTP)/10).
-			Msg("")
-
-		r.log.Info().Str("log_type", "recv_stats").
-			Uint64("avg bytes received per second [DC]", (bytesReceivedByDC-r.lastBytesReceivedByDC)/10).
-			Uint64("avg messages received per second [DC]", (messagesReceivedByDC-r.lastMessagesReceivedByDC)/10).
-			Uint64("avg bytes received per second [ICE]", (iceTransportBytesReceived-r.lastBytesReceivedByICE)/10).
-			Uint64("avg bytes received per second [SCTP]", (sctpTransportBytesReceived-r.lastBytesReceivedBySCTP)/10).
+		r.log.Info().Str("log_type", "report").
+			Uint64("bytes sent per second [DC]", (bytesSentByDC-r.lastBytesSentByDC)/10).
+			Uint64("messages sent per second [DC]", (messagesSentByDC-r.lastMessagesSentByDC)/10).
+			Uint64("bytes sent per second [ICE]", (iceTransportBytesSent-r.lastBytesSentByICE)/10).
+			Uint64("bytes sent per second [SCTP]", (sctpTransportBytesSent-r.lastBytesSentBySCTP)/10).
+			Uint64("bytes received per second [DC]", (bytesReceivedByDC-r.lastBytesReceivedByDC)/10).
+			Uint64("messages received per second [DC]", (messagesReceivedByDC-r.lastMessagesReceivedByDC)/10).
+			Uint64("bytes received per second [ICE]", (iceTransportBytesReceived-r.lastBytesReceivedByICE)/10).
+			Uint64("bytes received per second [SCTP]", (sctpTransportBytesReceived-r.lastBytesReceivedBySCTP)/10).
+			Int("peer_count", len(stats.Peers)).
+			Int("topic_count", stats.TopicCount).
 			Msg("")
 
 		r.lastBytesReceivedByDC = bytesReceivedByDC
@@ -189,11 +188,6 @@ func (r *Reporter) Report(stats Stats) {
 		r.lastBytesSentByICE = iceTransportBytesSent
 		r.lastMessagesSentByDC = messagesSentByDC
 		r.lastMessagesReceivedByDC = messagesReceivedByDC
-
-		r.log.Info().Str("log_type", "report").
-			Int("peer_count", len(stats.Peers)).
-			Int("topic_count", stats.TopicCount).
-			Msg("report")
 	}
 }
 

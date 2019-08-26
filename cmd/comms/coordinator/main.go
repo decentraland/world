@@ -20,9 +20,8 @@ import (
 )
 
 type rootConfig struct {
-	LogJSONDisabled bool   `overwrite-flag:"JSONDisabled"`
-	IdentityURL     string `overwrite-flag:"authURL" validate:"required"`
-	CoordinatorURL  string `overwrite-flag:"coordinatorURL" validate:"required"`
+	IdentityURL    string `overwrite-flag:"authURL" validate:"required"`
+	CoordinatorURL string `overwrite-flag:"coordinatorURL" validate:"required"`
 
 	Coordinator struct {
 		Host            string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
