@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"time"
+
 	"github.com/rs/zerolog"
 
 	"github.com/decentraland/world/internal/commons/config"
@@ -13,7 +15,15 @@ import (
 
 type rootConfig struct {
 	CoordinatorURL string `overwrite-flag:"coordinatorURL" validate:"required"`
-	SpawnObserver  bool   `overwrite-flag:"observer"`
+	DenseTest      struct {
+		NBots         int  `overwrite-flag:"n"`
+		SpawnObserver bool `overwrite-flag:"observer"`
+		Duration      int  `overwrite-flag:"duration" flag-usage:"duration in seconds"`
+	}
+}
+
+func newLogger(name string) zerolog.Logger {
+	return zerolog.New(os.Stdout).Level(zerolog.InfoLevel).With().Timestamp().Str("name", name).Logger()
 }
 
 func main() {
@@ -24,9 +34,8 @@ func main() {
 
 	fmt.Println("starting test: ", conf.CoordinatorURL)
 
-	for i := 0; i < 50; i++ {
-		name := fmt.Sprintf("client-%d", i)
-		log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel).With().Str("name", name).Logger()
+	for i := 0; i < conf.DenseTest.NBots; i++ {
+		log := newLogger(fmt.Sprintf("client-%d", i))
 
 		go commtest.StartBot(commtest.Options{
 			CoordinatorURL: conf.CoordinatorURL,
@@ -37,8 +46,15 @@ func main() {
 		})
 	}
 
-	if conf.SpawnObserver {
-		log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel).With().Str("name", "observer").Logger()
+	if conf.DenseTest.Duration > 0 {
+		go func() {
+			time.Sleep(time.Duration(conf.DenseTest.Duration) * time.Second)
+			os.Exit(0)
+		}()
+	}
+
+	if conf.DenseTest.SpawnObserver {
+		log := newLogger("observer")
 		commtest.StartBot(commtest.Options{
 			CoordinatorURL: conf.CoordinatorURL,
 			Topic:          "testtopic",

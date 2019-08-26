@@ -13,7 +13,7 @@ COPY . .
 RUN apt-get update && apt-get install -y \
     libssl-dev
 
-RUN make build
+RUN make buildall
 RUN go install -v ./...
 
 # DEPLOY STAGE

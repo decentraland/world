@@ -28,9 +28,6 @@ type LoggerConfig struct {
 
 // New returns a new logger
 func New(config *LoggerConfig) (Logger, error) {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	zerolog.TimestampFieldName = "@timestmap"
-
 	logger := zerolog.New(os.Stdout)
 
 	lvl, err := zerolog.ParseLevel(config.Level)
@@ -38,5 +35,11 @@ func New(config *LoggerConfig) (Logger, error) {
 		return logger, err
 	}
 
-	return logger.Level(lvl), nil
+	logger = logger.Level(lvl).With().Timestamp().Logger()
+	return logger, nil
+}
+
+func init() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimestampFieldName = "@timestmap"
 }
