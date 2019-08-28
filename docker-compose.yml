@@ -27,10 +27,11 @@ services:
       - .:/app
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /app
-    command: ./bin/wait-for-it --coordinator:9000 -- ./bin/wait-for-it db:5432 -- go run cmd/comms/server/main.go --statsDBHost=db --statsDBPort=5432 --statsDBName=statsdb --statsDBUser=postgres --statsDBPassword=password --authEnabled=false
+    command: ./bin/wait-for-it --coordinator:9000 -- ./bin/wait-for-it db:5432 -- go run cmd/comms/server/main.go --statsDBHost=db --statsDBPort=5432 --statsDBName=statsdb --statsDBUser=postgres --statsDBPassword=password --authEnabled=false --apiHost=0.0.0.0 --apiPort=9083
     tty: true
     ports:
       - "9081:9081"
+      - "9083:9083"
     depends_on:
       - gameauth
       - coordinator
