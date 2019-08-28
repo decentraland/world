@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,7 +17,7 @@ import (
 	"github.com/decentraland/world/internal/commons/metrics"
 	"github.com/decentraland/world/internal/commons/version"
 
-	logrus "github.com/sirupsen/logrus"
+	zl "github.com/rs/zerolog/log"
 )
 
 type rootConfig struct {
@@ -24,15 +25,18 @@ type rootConfig struct {
 	CoordinatorURL string `overwrite-flag:"coordinatorURL" validate:"required"`
 
 	Coordinator struct {
-		Host            string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
-		Port            int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
-		HealthCheckPort int    `overwrite-flag:"healthCheckPort" validate:"required"`
-		LogLevel        string `overwrite-flag:"logLevel"`
-		AuthTTL         int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
-		AuthEnabled     bool   `overwrite-flag:"authEnabled"`
-		Cluster         string `overwrite-flag:"cluster"`
-		ServerSecret    string `overwrite-flag:"serverSecret" validate:"required"`
-		Metrics         struct {
+		LogLevel string `overwrite-flag:"logLevel"`
+
+		Host    string `overwrite-flag:"host"      flag-usage:"host name" validate:"required"`
+		Port    int    `overwrite-flag:"port"      flag-usage:"host port" validate:"required"`
+		APIPort int    `overwrite-flag:"apiPort" validate:"required"`
+
+		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		AuthEnabled  bool   `overwrite-flag:"authEnabled"`
+		ServerSecret string `overwrite-flag:"serverSecret" validate:"required"`
+
+		Metrics struct {
+			Cluster   string `overwrite-flag:"cluster"`
 			Enabled   bool   `overwrite-flag:"metrics" flag-usage:"enable metrics"`
 			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
 		}
@@ -42,7 +46,7 @@ type rootConfig struct {
 func main() {
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		logrus.Fatal(err)
+		zl.Fatal().Err(err)
 	}
 
 	loggerConfig := logging.LoggerConfig{Level: conf.Coordinator.LogLevel}
@@ -79,7 +83,7 @@ func main() {
 	if conf.Coordinator.Metrics.Enabled {
 		traceName := conf.Coordinator.Metrics.TraceName
 		versionTag := fmt.Sprintf("version:%s", version.Version())
-		clusterTag := fmt.Sprintf("cluster:%s", conf.Coordinator.Cluster)
+		clusterTag := fmt.Sprintf("cluster:%s", conf.Coordinator.Metrics.Cluster)
 		tags := []string{"env:local", versionTag, clusterTag}
 
 		metricsClient, err := metrics.NewClient(traceName, log)
@@ -117,11 +121,23 @@ func main() {
 	go coordinator.Start(state)
 
 	go func() {
+		versionResponse, err := json.Marshal(map[string]string{"version": version.Version()})
+		if err != nil {
+			log.Fatal().Err(err)
+			return
+		}
+
 		mux := http.NewServeMux()
 		mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		})
-		addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.HealthCheckPort)
+		mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(versionResponse)
+		})
+		addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.APIPort)
+		log.Info().Str("address", addr).Msg("Starting HTTP API")
 		log.Fatal().Err(http.ListenAndServe(addr, mux))
 	}()
 

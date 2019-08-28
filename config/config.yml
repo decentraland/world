@@ -7,7 +7,7 @@ auth0:
 coordinator:
     host: 'localhost'
     port: 9000
-    healthCheckPort: 9080
+    apiPort: 9080
     logLevel: 'debug'
     authTTL: 60
     authEnabled: true
@@ -18,6 +18,8 @@ coordinator:
 
 commserver:
     logLevel: 'debug'
+    apiHost: 'localhost'
+    apiPort: 9080
     authTTL: 60
     authEnabled: true
     serverSecret: "123456"

@@ -2,10 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"time"
-
 	"net/http"
+	"time"
 
 	_ "net/http/pprof"
 
@@ -17,7 +17,7 @@ import (
 	"github.com/decentraland/world/internal/commons/version"
 	"github.com/decentraland/world/internal/commserver"
 	_ "github.com/lib/pq"
-	logrus "github.com/sirupsen/logrus"
+	zl "github.com/rs/zerolog/log"
 )
 
 type rootConfig struct {
@@ -25,12 +25,18 @@ type rootConfig struct {
 	IdentityURL     string `overwrite-flag:"authURL" validate:"required"`
 	CoordinatorURL  string `overwrite-flag:"coordinatorURL" flag-usage:"coordinator url" validate:"required"`
 	CommServer      struct {
-		LogLevel     string `overwrite-flag:"logLevel"`
-		ServerSecret string `overwrite-flag:"serverSecret"`
-		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		LogLevel string `overwrite-flag:"logLevel"`
+
+		APIHost string `overwrite-flag:"apiHost" validate:"required"`
+		APIPort int    `overwrite-flag:"apiPort" validate:"required"`
+
 		AuthEnabled  bool   `overwrite-flag:"authEnabled"`
-		Cluster      string `overwrite-flag:"cluster"`
-		Metrics      struct {
+		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
+		ServerSecret string `overwrite-flag:"serverSecret"`
+
+		Metrics struct {
+			Cluster string `overwrite-flag:"cluster"`
+
 			DDEnabled bool   `overwrite-flag:"ddMetrics" flag-usage:"enable dd metrics"`
 			TraceName string `overwrite-flag:"traceName" flag-usage:"metrics identifier" validate:"required"`
 
@@ -49,7 +55,7 @@ type rootConfig struct {
 func main() {
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		logrus.Fatal(err)
+		zl.Fatal().Err(err)
 	}
 
 	log, err := logging.New(&logging.LoggerConfig{Level: conf.CommServer.LogLevel})
@@ -90,7 +96,7 @@ func main() {
 	reportConfig := commserver.ReporterConfig{
 		LongReportPeriod: 10 * time.Minute,
 		Log:              log,
-		Cluster:          conf.CommServer.Cluster,
+		Cluster:          conf.CommServer.Metrics.Cluster,
 		DebugModeEnabled: conf.CommServer.Metrics.DebugEnabled,
 	}
 
@@ -139,6 +145,27 @@ func main() {
 		addr := fmt.Sprintf("0.0.0.0:9081")
 		log.Info().Str("address", addr).Msg("Starting profiler")
 		log.Error().Err(http.ListenAndServe(addr, nil))
+	}()
+
+	go func() {
+		versionResponse, err := json.Marshal(map[string]string{"version": version.Version()})
+		if err != nil {
+			log.Fatal().Err(err)
+			return
+		}
+
+		mux := http.NewServeMux()
+		mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(versionResponse)
+		})
+		addr := fmt.Sprintf("%s:%d", conf.CommServer.APIHost, conf.CommServer.APIPort)
+		log.Info().Str("address", addr).Msg("Starting HTTP API")
+		log.Fatal().Err(http.ListenAndServe(addr, mux))
 	}()
 
 	if err := commserver.ConnectCoordinator(state); err != nil {
