@@ -6,11 +6,16 @@ build:
 	go build $(BUILD_FLAGS) -o build/coordinator ./cmd/comms/coordinator
 	go build $(BUILD_FLAGS) -o build/server ./cmd/comms/server
 
-buildall: build
+buildperftest:
 	go build -o build/densetest ./cmd/comms/densetest
 	go build -o build/sparsetest ./cmd/comms/sparsetest
+	go build -o build/realistictest ./cmd/comms/realistictest
+
+buildcli:
 	go build -o build/cli_bot ./cmd/cli/bot
 	go build -o build/cli_profile ./cmd/cli/profile
+
+buildall: build buildperftest buildcli
 
 fmt:
 	gofmt -w .
