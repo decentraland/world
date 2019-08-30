@@ -25,8 +25,8 @@ commserver:
     serverSecret: "123456"
     metrics:
         ddEnabled: true
-        dbEnabled: true
-        debugEnabled: true
+        dbEnabled: false
+        debugEnabled: false
         traceName: 'commserver-local'
 
 gameauth:
@@ -44,8 +44,19 @@ gameauth:
 cli:
   auth0ClientID: lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx
   auth0Audience: decentraland.org
-
+  centerX: 0
+  centerY: 0
+  radius: 3
 
 densetest:
   nBots: 50
   spawnObserver: false
+
+sparsetest:
+  nBots: 50
+
+realistictest:
+  nBots: 50
+  centerX: 0
+  centerY: 0
+  radius: 3
