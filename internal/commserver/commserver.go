@@ -32,6 +32,20 @@ type ReporterConfig struct {
 	DebugModeEnabled bool
 }
 
+type Totals struct {
+	bytesReceivedByDC uint64
+	bytesSentByDC     uint64
+
+	bytesReceivedBySCTP uint64
+	bytesSentBySCTP     uint64
+
+	bytesReceivedByICE uint64
+	bytesSentByICE     uint64
+
+	messagesSentByDC     uint64
+	messagesReceivedByDC uint64
+}
+
 type Reporter struct {
 	longReportPeriod time.Duration
 	lastLongReport   time.Time
@@ -41,17 +55,7 @@ type Reporter struct {
 	log              logging.Logger
 	debugModeEnabled bool
 
-	lastBytesReceivedByDC uint64
-	lastBytesSentByDC     uint64
-
-	lastBytesReceivedBySCTP uint64
-	lastBytesSentBySCTP     uint64
-
-	lastBytesReceivedByICE uint64
-	lastBytesSentByICE     uint64
-
-	lastMessagesSentByDC     uint64
-	lastMessagesReceivedByDC uint64
+	lastTotals Totals
 }
 
 func NewReporter(config *ReporterConfig) *Reporter {
@@ -77,32 +81,23 @@ func (r *Reporter) Report(stats Stats) {
 		go r.reportDB(r.db, stats)
 	}
 
-	var bytesReceivedReliable, bytesSentReliable, messagesSentReliable, messagesReceivedReliable uint64
-	var bytesReceivedUnreliable, bytesSentUnreliable, messagesSentUnreliable, messagesReceivedUnreliable uint64
-
-	var sctpTransportBytesSent, sctpTransportBytesReceived uint64
-	var iceTransportBytesSent, iceTransportBytesReceived uint64
+	totals := Totals{}
 
 	stateCount := make(map[commserver.ICEConnectionState]uint32)
 	localCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
 	remoteCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
 
 	for _, peerStats := range stats.Peers {
-		bytesSentReliable += peerStats.ReliableBytesSent
-		bytesReceivedReliable += peerStats.ReliableBytesReceived
-		messagesSentReliable += uint64(peerStats.ReliableMessagesSent)
-		messagesReceivedReliable += uint64(peerStats.ReliableMessagesReceived)
+		totals.bytesSentByDC += peerStats.ReliableBytesSent + peerStats.UnreliableBytesSent
+		totals.bytesReceivedByDC += peerStats.ReliableBytesReceived + peerStats.UnreliableBytesReceived
+		totals.messagesSentByDC += uint64(peerStats.ReliableMessagesSent) + uint64(peerStats.UnreliableMessagesSent)
+		totals.messagesReceivedByDC += uint64(peerStats.ReliableMessagesReceived) + uint64(peerStats.UnreliableMessagesReceived)
 
-		bytesSentUnreliable += peerStats.UnreliableBytesSent
-		bytesReceivedUnreliable += peerStats.UnreliableBytesReceived
-		messagesSentUnreliable += uint64(peerStats.UnreliableMessagesSent)
-		messagesReceivedUnreliable += uint64(peerStats.UnreliableMessagesReceived)
+		totals.bytesSentBySCTP += peerStats.SCTPTransportBytesSent
+		totals.bytesReceivedBySCTP += peerStats.SCTPTransportBytesReceived
 
-		sctpTransportBytesSent += peerStats.SCTPTransportBytesSent
-		sctpTransportBytesReceived += peerStats.SCTPTransportBytesReceived
-
-		iceTransportBytesSent += peerStats.ICETransportBytesSent
-		iceTransportBytesReceived += peerStats.ICETransportBytesReceived
+		totals.bytesSentByICE += peerStats.ICETransportBytesSent
+		totals.bytesReceivedByICE += peerStats.ICETransportBytesReceived
 
 		peerTag := fmt.Sprintf("peer:%d", peerStats.Alias)
 		stateTags := append([]string{peerTag}, r.tags...)
@@ -119,11 +114,15 @@ func (r *Reporter) Report(stats Stats) {
 		}
 	}
 
-	bytesReceivedByDC := bytesReceivedReliable + bytesReceivedUnreliable
-	bytesSentByDC := bytesSentReliable + bytesSentUnreliable
+	messagesSent := (totals.messagesSentByDC - r.lastTotals.messagesSentByDC) / 10
+	bytesSent := (totals.bytesSentByDC - r.lastTotals.bytesSentByDC) / 10
+	iceBytesSent := (totals.bytesSentByICE - r.lastTotals.bytesSentByICE) / 10
+	sctpBytesSent := (totals.bytesSentBySCTP - r.lastTotals.bytesSentBySCTP) / 10
 
-	messagesReceivedByDC := messagesReceivedReliable + messagesReceivedUnreliable
-	messagesSentByDC := messagesSentReliable + messagesSentUnreliable
+	messagesReceived := (totals.messagesReceivedByDC - r.lastTotals.messagesReceivedByDC) / 10
+	bytesReceived := (totals.bytesReceivedByDC - r.lastTotals.bytesReceivedByDC) / 10
+	iceBytesReceived := (totals.bytesReceivedByICE - r.lastTotals.bytesReceivedByICE) / 10
+	sctpBytesReceived := (totals.bytesReceivedBySCTP - r.lastTotals.bytesReceivedBySCTP) / 10
 
 	if r.ddClient != nil {
 		r.ddClient.GaugeInt("topicCh.size", stats.TopicChSize, r.tags)
@@ -135,17 +134,15 @@ func (r *Reporter) Report(stats Stats) {
 		r.ddClient.GaugeInt("connection.count", len(stats.Peers), r.tags)
 		r.ddClient.GaugeInt("topic.count", stats.TopicCount, r.tags)
 
-		r.ddClient.GaugeUint64("totalBytesReceived", bytesReceivedByDC, r.tags)
-		r.ddClient.GaugeUint64("totalBytesSent", bytesSentByDC, r.tags)
+		r.ddClient.GaugeUint64("messagesSent", messagesSent, r.tags)
+		r.ddClient.GaugeUint64("bytesSent", bytesSent, r.tags)
+		r.ddClient.GaugeUint64("bytesSentICE", iceBytesSent, r.tags)
+		r.ddClient.GaugeUint64("bytesSentSCTP", sctpBytesSent, r.tags)
 
-		r.ddClient.GaugeUint64("totalMessagesSent", messagesSentByDC, r.tags)
-		r.ddClient.GaugeUint64("totalMessagesReceived", messagesReceivedByDC, r.tags)
-
-		r.ddClient.GaugeUint64("totalBytesReceivedSCTP", sctpTransportBytesReceived, r.tags)
-		r.ddClient.GaugeUint64("totalBytesSentSCTP", sctpTransportBytesSent, r.tags)
-
-		r.ddClient.GaugeUint64("totalBytesReceivedICE", iceTransportBytesReceived, r.tags)
-		r.ddClient.GaugeUint64("totalBytesSentICE", iceTransportBytesSent, r.tags)
+		r.ddClient.GaugeUint64("messagesReceived", messagesReceived, r.tags)
+		r.ddClient.GaugeUint64("bytesReceived", bytesReceived, r.tags)
+		r.ddClient.GaugeUint64("bytesReceivedICE", iceBytesReceived, r.tags)
+		r.ddClient.GaugeUint64("bytesReceivedSCTP", sctpBytesReceived, r.tags)
 
 		for connState, count := range stateCount {
 			stateTag := fmt.Sprintf("state:%s", connState.String())
@@ -168,27 +165,20 @@ func (r *Reporter) Report(stats Stats) {
 
 	if r.debugModeEnabled {
 		r.log.Info().Str("log_type", "report").
-			Uint64("bytes sent per second [DC]", (bytesSentByDC-r.lastBytesSentByDC)/10).
-			Uint64("messages sent per second [DC]", (messagesSentByDC-r.lastMessagesSentByDC)/10).
-			Uint64("bytes sent per second [ICE]", (iceTransportBytesSent-r.lastBytesSentByICE)/10).
-			Uint64("bytes sent per second [SCTP]", (sctpTransportBytesSent-r.lastBytesSentBySCTP)/10).
-			Uint64("bytes received per second [DC]", (bytesReceivedByDC-r.lastBytesReceivedByDC)/10).
-			Uint64("messages received per second [DC]", (messagesReceivedByDC-r.lastMessagesReceivedByDC)/10).
-			Uint64("bytes received per second [ICE]", (iceTransportBytesReceived-r.lastBytesReceivedByICE)/10).
-			Uint64("bytes received per second [SCTP]", (sctpTransportBytesReceived-r.lastBytesReceivedBySCTP)/10).
+			Uint64("messages sent per second [DC]", messagesSent).
+			Uint64("bytes sent per second [DC]", bytesSent).
+			Uint64("bytes sent per second [ICE]", iceBytesSent).
+			Uint64("bytes sent per second [SCTP]", sctpBytesSent).
+			Uint64("messages received per second [DC]", messagesReceived).
+			Uint64("bytes received per second [DC]", bytesReceived).
+			Uint64("bytes received per second [ICE]", iceBytesReceived).
+			Uint64("bytes received per second [SCTP]", sctpBytesReceived).
 			Int("peer_count", len(stats.Peers)).
 			Int("topic_count", stats.TopicCount).
 			Msg("")
-
-		r.lastBytesReceivedByDC = bytesReceivedByDC
-		r.lastBytesSentByDC = bytesSentByDC
-		r.lastBytesReceivedBySCTP = sctpTransportBytesReceived
-		r.lastBytesSentBySCTP = sctpTransportBytesSent
-		r.lastBytesReceivedByICE = iceTransportBytesReceived
-		r.lastBytesSentByICE = iceTransportBytesSent
-		r.lastMessagesSentByDC = messagesSentByDC
-		r.lastMessagesReceivedByDC = messagesReceivedByDC
 	}
+
+	r.lastTotals = totals
 }
 
 func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
