@@ -1,5 +1,5 @@
 # BUILD STAGE
-FROM golang:1.12.7 as builder
+FROM golang:1.13 as builder
 
 WORKDIR /usr/src/app
 ENV GO111MODULE=on
@@ -17,7 +17,7 @@ RUN make buildall
 RUN go install -v ./...
 
 # DEPLOY STAGE
-FROM golang:1.12.7
+FROM golang:1.13
 
 RUN apt-get update && apt-get install -y \
     libssl-dev

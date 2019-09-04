@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: testuser
@@ -39,7 +39,7 @@ jobs:
 
   build:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
         environment: &ENVIRONMENT
           DOCKER_IMAGE_NAME: decentraland/world
 
