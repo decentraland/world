@@ -7,7 +7,7 @@ require (
 	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190418232430-6867ff32788a // indirect
 	github.com/decentraland/auth-go v0.0.0-20190719132230-f55cf3b8e7f0
-	github.com/decentraland/webrtc-broker v0.0.0-20190823184620-08faf0d9fba3
+	github.com/decentraland/webrtc-broker v0.0.0-20190905183604-aefa651f6aec
 	github.com/ethereum/go-ethereum v1.8.18
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
 	github.com/gin-gonic/gin v1.3.0
