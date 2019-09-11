@@ -20,10 +20,7 @@ const BasicHeaders = "Accept,Accept-Encoding, Access-Control-Allow-Credentials, 
 const DclHeaders = auth.HeaderIdentity + ", " +
 	auth.HeaderTimestamp + ", " +
 	auth.HeaderAccessToken + ", " +
-	auth.HeaderSignature + ", " +
-	auth.HeaderAuthType + ", " +
-	auth.HeaderCert + ", " +
-	auth.HeaderCertSignature
+	auth.HeaderSignature
 
 const AllHeaders = BasicHeaders + ", " + DclHeaders
 
