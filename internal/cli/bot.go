@@ -332,10 +332,8 @@ func StartBot(options *BotOptions) {
 	for {
 		select {
 		case <-profileTicker.C:
-			topic := fmt.Sprintf("profile:%s", hashLocation())
-
 			ms := nowMs()
-			bytes, err := EncodeTopicIdentityMessage(topic, &protocol.ProfileData{
+			bytes, err := EncodeTopicIdentityMessage(hashLocation(), &protocol.ProfileData{
 				Category:       protocol.Category_PROFILE,
 				Time:           ms,
 				ProfileVersion: "1",
@@ -345,10 +343,8 @@ func StartBot(options *BotOptions) {
 			}
 			client.SendReliable <- bytes
 		case <-chatTicker.C:
-			topic := fmt.Sprintf("chat:%s", hashLocation())
-
 			ms := nowMs()
-			bytes, err := EncodeTopicMessage(topic, &protocol.ChatData{
+			bytes, err := EncodeTopicMessage(hashLocation(), &protocol.ChatData{
 				Category:  protocol.Category_CHAT,
 				Time:      ms,
 				MessageId: ksuid.New().String(),
@@ -392,15 +388,8 @@ func StartBot(options *BotOptions) {
 			for x := minX; x <= maxX; x += 4 {
 				for z := minZ; z <= maxZ; z += 4 {
 					hash := fmt.Sprintf("%d:%d", x>>2, z>>2)
-					positionTopic := fmt.Sprintf("position:%s", hash)
-					profileTopic := fmt.Sprintf("profile:%s", hash)
-					chatTopic := fmt.Sprintf("chat:%s", hash)
-
-					newTopics[positionTopic] = true
-					newTopics[profileTopic] = true
-					newTopics[chatTopic] = true
-
-					if !topics[positionTopic] || !topics[profileTopic] {
+					newTopics[hash] = true
+					if !topics[hash] {
 						topicsChanged = true
 					}
 				}
@@ -411,9 +400,8 @@ func StartBot(options *BotOptions) {
 				client.SendTopicSubscriptionMessage(newTopics)
 			}
 
-			topic := fmt.Sprintf("position:%s", hashLocation())
 			ms := nowMs()
-			bytes, err := EncodeTopicMessage(topic, &protocol.PositionData{
+			bytes, err := EncodeTopicMessage(hashLocation(), &protocol.PositionData{
 				Category:  protocol.Category_POSITION,
 				Time:      ms,
 				PositionX: float32(p.X),
