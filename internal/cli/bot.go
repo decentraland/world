@@ -124,9 +124,15 @@ type ClientAuthenticator struct {
 	Auth0ClientID     string
 	Auth0ClientSecret string
 	Auth0Audience     string
+
+	accessToken string
 }
 
 func (a *ClientAuthenticator) getAccessToken() (string, error) {
+	if a.accessToken != "" {
+		return a.accessToken, nil
+	}
+
 	auth0 := Auth0{
 		Domain:       a.Auth0Domain,
 		ClientID:     a.Auth0ClientID,
@@ -141,7 +147,14 @@ func (a *ClientAuthenticator) getAccessToken() (string, error) {
 		PubKey:      EncodePublicKey(a.EphemeralKey),
 	}
 
-	return ExecuteAuthFlow(&auth0, &auth)
+	accessToken, err := ExecuteAuthFlow(&auth0, &auth)
+	if err != nil {
+		return accessToken, err
+	}
+
+	a.accessToken = accessToken
+
+	return a.accessToken, nil
 }
 
 func (a *ClientAuthenticator) GenerateClientAuthMessage() (*broker.AuthMessage, error) {

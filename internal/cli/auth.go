@@ -16,6 +16,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+const (
+	auth0TokenKey = "service_token"
+)
+
 type Auth0 struct {
 	Domain       string
 	Email        string
@@ -112,7 +116,11 @@ func (a *Auth) GetAccessToken(userToken string) (string, error) {
 		return "", err
 	}
 
-	return response["service_token"].(string), nil
+	accessToken, ok := response[auth0TokenKey]
+	if !ok {
+		return "", fmt.Errorf("missing key from response %s", auth0TokenKey)
+	}
+	return accessToken.(string), nil
 }
 
 func ExecuteAuthFlow(auth0 *Auth0, auth *Auth) (string, error) {
