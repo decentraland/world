@@ -32,20 +32,6 @@ type ReporterConfig struct {
 	DebugModeEnabled bool
 }
 
-type Totals struct {
-	bytesReceivedByDC uint64
-	bytesSentByDC     uint64
-
-	bytesReceivedBySCTP uint64
-	bytesSentBySCTP     uint64
-
-	bytesReceivedByICE uint64
-	bytesSentByICE     uint64
-
-	messagesSentByDC     uint64
-	messagesReceivedByDC uint64
-}
-
 type Reporter struct {
 	longReportPeriod time.Duration
 	lastLongReport   time.Time
@@ -54,8 +40,7 @@ type Reporter struct {
 	tags             []string
 	log              logging.Logger
 	debugModeEnabled bool
-
-	lastTotals Totals
+	lastStats        map[uint64]commserver.PeerStats
 }
 
 func NewReporter(config *ReporterConfig) *Reporter {
@@ -71,7 +56,24 @@ func NewReporter(config *ReporterConfig) *Reporter {
 		tags:             tags,
 		log:              config.Log,
 		debugModeEnabled: config.DebugModeEnabled,
+		lastStats:        make(map[uint64]commserver.PeerStats),
 	}
+}
+
+func getBytesSentByDC(s commserver.PeerStats) uint64 {
+	return s.ReliableBytesSent + s.UnreliableBytesSent
+}
+
+func getBytesReceivedByDC(s commserver.PeerStats) uint64 {
+	return s.ReliableBytesReceived + s.UnreliableBytesReceived
+}
+
+func getMessagesSentByDC(s commserver.PeerStats) uint64 {
+	return uint64(s.ReliableMessagesSent) + uint64(s.UnreliableMessagesSent)
+}
+
+func getMessagesReceivedByDC(s commserver.PeerStats) uint64 {
+	return uint64(s.ReliableMessagesReceived) + uint64(s.UnreliableMessagesReceived)
 }
 
 func (r *Reporter) Report(stats Stats) {
@@ -81,48 +83,54 @@ func (r *Reporter) Report(stats Stats) {
 		go r.reportDB(r.db, stats)
 	}
 
-	totals := Totals{}
-
 	stateCount := make(map[commserver.ICEConnectionState]uint32)
 	localCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
 	remoteCandidateTypeCount := make(map[commserver.ICECandidateType]uint32)
 
-	for _, peerStats := range stats.Peers {
-		totals.bytesSentByDC += peerStats.ReliableBytesSent + peerStats.UnreliableBytesSent
-		totals.bytesReceivedByDC += peerStats.ReliableBytesReceived + peerStats.UnreliableBytesReceived
-		totals.messagesSentByDC += uint64(peerStats.ReliableMessagesSent) + uint64(peerStats.UnreliableMessagesSent)
-		totals.messagesReceivedByDC += uint64(peerStats.ReliableMessagesReceived) + uint64(peerStats.UnreliableMessagesReceived)
+	var messagesSentByDC, bytesSentByDC, bytesSentByICE, bytesSentBySCTP uint64
+	var messagesReceivedByDC, bytesReceivedByDC, bytesReceivedByICE, bytesReceivedBySCTP uint64
 
-		totals.bytesSentBySCTP += peerStats.SCTPTransportBytesSent
-		totals.bytesReceivedBySCTP += peerStats.SCTPTransportBytesReceived
+	for _, pStats := range stats.Peers {
+		pLastStats := r.lastStats[pStats.Alias]
 
-		totals.bytesSentByICE += peerStats.ICETransportBytesSent
-		totals.bytesReceivedByICE += peerStats.ICETransportBytesReceived
-
-		peerTag := fmt.Sprintf("peer:%d", peerStats.Alias)
+		peerTag := fmt.Sprintf("peer:%d", pStats.Alias)
 		stateTags := append([]string{peerTag}, r.tags...)
 
-		if r.ddClient != nil && peerStats.TopicCount > 0 {
-			r.ddClient.GaugeUint32("peer.topicCount", peerStats.TopicCount, stateTags)
+		if r.ddClient != nil && pStats.TopicCount > 0 {
+			r.ddClient.GaugeUint32("peer.topicCount", pStats.TopicCount, stateTags)
 		}
 
-		stateCount[peerStats.State]++
+		stateCount[pStats.State]++
 
-		if peerStats.Nomination {
-			localCandidateTypeCount[peerStats.LocalCandidateType]++
-			remoteCandidateTypeCount[peerStats.LocalCandidateType]++
+		if pStats.Nomination {
+			localCandidateTypeCount[pStats.LocalCandidateType]++
+			remoteCandidateTypeCount[pStats.LocalCandidateType]++
 		}
+
+		messagesSentByDC += getMessagesSentByDC(pStats) - getMessagesSentByDC(pLastStats)
+		bytesSentByDC += getBytesSentByDC(pStats) - getBytesSentByDC(pLastStats)
+		bytesSentByICE += pStats.ICETransportBytesSent - pLastStats.ICETransportBytesSent
+		bytesSentBySCTP += pStats.SCTPTransportBytesSent - pLastStats.SCTPTransportBytesSent
+
+		messagesReceivedByDC += getMessagesReceivedByDC(pStats) - getMessagesReceivedByDC(pLastStats)
+		bytesReceivedByDC += getBytesReceivedByDC(pStats) - getBytesReceivedByDC(pLastStats)
+		bytesReceivedByICE += pStats.ICETransportBytesReceived - pLastStats.ICETransportBytesReceived
+		bytesReceivedBySCTP += pStats.SCTPTransportBytesReceived - pLastStats.SCTPTransportBytesReceived
+
+		r.lastStats[pStats.Alias] = pStats
 	}
 
-	messagesSent := (totals.messagesSentByDC - r.lastTotals.messagesSentByDC) / 10
-	bytesSent := (totals.bytesSentByDC - r.lastTotals.bytesSentByDC) / 10
-	iceBytesSent := (totals.bytesSentByICE - r.lastTotals.bytesSentByICE) / 10
-	sctpBytesSent := (totals.bytesSentBySCTP - r.lastTotals.bytesSentBySCTP) / 10
+	seconds := uint64(10)
 
-	messagesReceived := (totals.messagesReceivedByDC - r.lastTotals.messagesReceivedByDC) / 10
-	bytesReceived := (totals.bytesReceivedByDC - r.lastTotals.bytesReceivedByDC) / 10
-	iceBytesReceived := (totals.bytesReceivedByICE - r.lastTotals.bytesReceivedByICE) / 10
-	sctpBytesReceived := (totals.bytesReceivedBySCTP - r.lastTotals.bytesReceivedBySCTP) / 10
+	messagesSent := messagesSentByDC / seconds
+	bytesSent := bytesSentByDC / seconds
+	iceBytesSent := bytesSentByICE / seconds
+	sctpBytesSent := bytesSentBySCTP / seconds
+
+	messagesReceived := messagesReceivedByDC / seconds
+	bytesReceived := bytesReceivedByDC / seconds
+	iceBytesReceived := bytesReceivedByICE / seconds
+	sctpBytesReceived := bytesReceivedBySCTP / seconds
 
 	if r.ddClient != nil {
 		r.ddClient.GaugeInt("topicCh.size", stats.TopicChSize, r.tags)
@@ -177,8 +185,6 @@ func (r *Reporter) Report(stats Stats) {
 			Int("topic_count", stats.TopicCount).
 			Msg("")
 	}
-
-	r.lastTotals = totals
 }
 
 func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
@@ -198,14 +204,14 @@ func (r *Reporter) reportDB(db *sql.DB, stats Stats) {
 		return
 	}
 
-	for _, peerStats := range stats.Peers {
-		encodedStats, err := json.Marshal(peerStats)
+	for _, pStats := range stats.Peers {
+		encodedStats, err := json.Marshal(pStats)
 		if err != nil {
 			r.log.Error().Err(err).Msg("cannot encode stats as json")
 			continue
 		}
 
-		_, err = stmt.Exec(peerStats.Alias, string(peerStats.Identity), version.Version(), encodedStats)
+		_, err = stmt.Exec(pStats.Alias, string(pStats.Identity), version.Version(), encodedStats)
 		if err != nil {
 			r.log.Error().Err(err).Msg("cannot exec statement")
 			continue
