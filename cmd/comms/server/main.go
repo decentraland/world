@@ -10,6 +10,8 @@ import (
 	_ "net/http/pprof"
 
 	brokerAuth "github.com/decentraland/webrtc-broker/pkg/authentication"
+	"github.com/decentraland/webrtc-broker/pkg/broker"
+	"github.com/decentraland/webrtc-broker/pkg/protocol"
 	"github.com/decentraland/world/internal/commons/auth"
 	"github.com/decentraland/world/internal/commons/config"
 	"github.com/decentraland/world/internal/commons/logging"
@@ -17,6 +19,7 @@ import (
 	"github.com/decentraland/world/internal/commons/version"
 	"github.com/decentraland/world/internal/commserver"
 	_ "github.com/lib/pq"
+	pion "github.com/pion/webrtc/v2"
 	zl "github.com/rs/zerolog/log"
 )
 
@@ -33,6 +36,8 @@ type rootConfig struct {
 		AuthEnabled  bool   `overwrite-flag:"authEnabled"`
 		AuthTTL      int64  `overwrite-flag:"authTTL" flag-usage:"request time to live"`
 		ServerSecret string `overwrite-flag:"serverSecret"`
+
+		MaxPeers int `overwrite-flag:"maxPeers"`
 
 		Metrics struct {
 			Cluster string `overwrite-flag:"cluster"`
@@ -55,7 +60,7 @@ type rootConfig struct {
 func main() {
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		zl.Fatal().Err(err)
+		zl.Fatal().Err(err).Msg("invalid config")
 	}
 
 	log, err := logging.New(&logging.LoggerConfig{Level: conf.CommServer.LogLevel})
@@ -80,17 +85,17 @@ func main() {
 		authenticator = &brokerAuth.NoopAuthenticator{}
 	}
 
-	config := commserver.Config{
+	config := broker.Config{
+		Role: protocol.Role_COMMUNICATION_SERVER,
 		Auth: authenticator,
 		Log:  &log,
-		ICEServers: []commserver.ICEServer{
+		ICEServers: []pion.ICEServer{
 			{
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
-		CoordinatorURL:         conf.CoordinatorURL,
-		ExitOnCoordinatorClose: true,
-		ReportPeriod:           10 * time.Second,
+		CoordinatorURL: conf.CoordinatorURL,
+		MaxPeers:       uint16(conf.CommServer.MaxPeers),
 	}
 
 	reportConfig := commserver.ReporterConfig{
@@ -131,12 +136,9 @@ func main() {
 		reportConfig.DB = db
 	}
 
-	reporter := commserver.NewReporter(&reportConfig)
-	config.Reporter = reporter.Report
-
-	state, err := commserver.MakeState(&config)
+	b, err := broker.NewBroker(&config)
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("cannot create a new broker")
 	}
 
 	log.Info().Str("version", version.Version()).Msg("starting communication server")
@@ -150,7 +152,7 @@ func main() {
 	go func() {
 		versionResponse, err := json.Marshal(map[string]string{"version": version.Version()})
 		if err != nil {
-			log.Fatal().Err(err)
+			log.Fatal().Err(err).Msg("invalid version")
 			return
 		}
 
@@ -165,13 +167,27 @@ func main() {
 		})
 		addr := fmt.Sprintf("%s:%d", conf.CommServer.APIHost, conf.CommServer.APIPort)
 		log.Info().Str("address", addr).Msg("Starting HTTP API")
-		log.Fatal().Err(http.ListenAndServe(addr, mux))
+		log.Fatal().Err(http.ListenAndServe(addr, mux)).Msg("")
 	}()
 
-	if err := commserver.ConnectCoordinator(state); err != nil {
+	if err := b.Connect(); err != nil {
 		log.Fatal().Err(err).Msg("connect coordinator failure")
 	}
 
-	go commserver.ProcessMessagesQueue(state)
-	commserver.Process(state)
+	go b.ProcessSubscriptionChannel()
+
+	go b.ProcessMessagesChannel()
+
+	go b.ProcessControlMessages()
+
+	reporter := commserver.NewReporter(&reportConfig)
+	seconds := uint64(10)
+	reportTicker := time.NewTicker(time.Duration(seconds) * time.Second)
+
+	for {
+		<-reportTicker.C
+
+		stats := b.GetBrokerStats()
+		reporter.Report(stats)
+	}
 }

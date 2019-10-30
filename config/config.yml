@@ -23,6 +23,7 @@ commserver:
     authTTL: 60
     authEnabled: true
     serverSecret: "123456"
+    maxPeers: 60
     metrics:
         ddEnabled: true
         dbEnabled: false
@@ -44,6 +45,7 @@ gameauth:
 cli:
   auth0ClientID: lTUEMnFpYb0aiUKeIRPbh7pBxKM6sccx
   auth0Audience: decentraland.org
+  logLevel: 'info'
   centerX: 0
   centerY: 0
   radius: 3
