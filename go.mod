@@ -1,36 +1,27 @@
 module github.com/decentraland/world
 
-go 1.12
+go 1.13
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/DataDog/datadog-go v2.2.0+incompatible
+	github.com/DataDog/datadog-go v3.2.0+incompatible
 	github.com/decentraland/auth-go v0.0.0-20190911154210-625ab1240333
-	github.com/decentraland/webrtc-broker v0.0.0-20190911132119-b4e013505343
+	github.com/decentraland/webrtc-broker v0.0.0-20191030121831-ec5844a0191b
 	github.com/ethereum/go-ethereum v1.9.3
-	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
-	github.com/gin-gonic/gin v1.3.0
-	github.com/go-playground/locales v0.12.1
+	github.com/gin-gonic/gin v1.4.0
+	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.16.0
-	github.com/golang/protobuf v1.3.1
-	github.com/json-iterator/go v1.1.6 // indirect
-	github.com/leodido/go-urn v1.1.0 // indirect
-	github.com/lib/pq v1.1.0
-	github.com/mattn/go-isatty v0.0.8 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/golang/protobuf v1.3.2
+	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/lib/pq v1.2.0
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/pion/webrtc/v2 v2.1.4-0.20190911044825-6997cc792c16
+	github.com/pion/webrtc/v2 v2.1.11
 	github.com/pkg/errors v0.8.1
-	github.com/rs/zerolog v1.14.3
+	github.com/rs/zerolog v1.16.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/spf13/viper v1.3.2
+	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/tinylib/msgp v1.1.0 // indirect
-	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
-	gopkg.in/DataDog/dd-trace-go.v1 v1.14.0
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
-	gopkg.in/go-playground/validator.v9 v9.28.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.18.0
+	gopkg.in/go-playground/validator.v9 v9.30.0
 )
