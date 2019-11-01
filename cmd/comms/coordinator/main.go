@@ -46,7 +46,7 @@ type rootConfig struct {
 func main() {
 	var conf rootConfig
 	if err := config.ReadConfiguration("config/config", &conf); err != nil {
-		zl.Fatal().Err(err)
+		zl.Fatal().Err(err).Msg("cannot read config")
 	}
 
 	loggerConfig := logging.LoggerConfig{Level: conf.Coordinator.LogLevel}
@@ -123,7 +123,7 @@ func main() {
 	go func() {
 		versionResponse, err := json.Marshal(map[string]string{"version": version.Version()})
 		if err != nil {
-			log.Fatal().Err(err)
+			log.Fatal().Err(err).Msg("invalid version")
 			return
 		}
 
@@ -138,7 +138,7 @@ func main() {
 		})
 		addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.APIPort)
 		log.Info().Str("address", addr).Msg("Starting HTTP API")
-		log.Fatal().Err(http.ListenAndServe(addr, mux))
+		log.Fatal().Err(http.ListenAndServe(addr, mux)).Msg("")
 	}()
 
 	mux := http.NewServeMux()
@@ -146,5 +146,5 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%d", conf.Coordinator.Host, conf.Coordinator.Port)
 	log.Info().Str("addr", addr).Str("version", version.Version()).Msg("starting coordinator")
-	log.Fatal().Err(http.ListenAndServe(addr, mux))
+	log.Fatal().Err(http.ListenAndServe(addr, mux)).Msg("")
 }
