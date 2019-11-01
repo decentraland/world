@@ -27,7 +27,7 @@ commserver:
     metrics:
         ddEnabled: true
         dbEnabled: false
-        debugEnabled: false
+        debugEnabled: true
         traceName: 'commserver-local'
 
 gameauth:
