@@ -20,6 +20,7 @@ import (
 	"github.com/decentraland/world/internal/commserver"
 	_ "github.com/lib/pq"
 	pion "github.com/pion/webrtc/v2"
+	"github.com/rs/zerolog"
 	zl "github.com/rs/zerolog/log"
 )
 
@@ -94,8 +95,10 @@ func main() {
 				URLs: []string{"stun:stun.l.google.com:19302"},
 			},
 		},
-		CoordinatorURL: conf.CoordinatorURL,
-		MaxPeers:       uint16(conf.CommServer.MaxPeers),
+		CoordinatorURL:         conf.CoordinatorURL,
+		MaxPeers:               uint16(conf.CommServer.MaxPeers),
+		ExitOnCoordinatorClose: true,
+		WebRtcLogLevel:         zerolog.WarnLevel,
 	}
 
 	reportConfig := commserver.ReporterConfig{
