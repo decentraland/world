@@ -34,8 +34,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/decentraland/auth-go v0.0.0-20190911154210-625ab1240333 h1:CHHeOYBdkkcZHz++Io5EweoodlhHEMbq/Sro/URgQgQ=
 github.com/decentraland/auth-go v0.0.0-20190911154210-625ab1240333/go.mod h1:lVK4lUxL3H3u0dk9sf1YciB8q0T5e/9hAnnRAwVGViQ=
-github.com/decentraland/webrtc-broker v0.0.0-20191129130310-f79e4ed2b0bb h1:hkYID1H70okv76i9ZKtjx6iVWor5sH98xnvJ14iytrI=
-github.com/decentraland/webrtc-broker v0.0.0-20191129130310-f79e4ed2b0bb/go.mod h1:2M91pbBUcFSMZ3IWXRezZgQ65mG9dBYC+1jP8BQlHuk=
+github.com/decentraland/webrtc-broker v0.0.0-20191129195321-8567bd0c52ab h1:spftNPVdw1/yno4mlP4XN0Rc76MrUuonr2Jgn4IAxSQ=
+github.com/decentraland/webrtc-broker v0.0.0-20191129195321-8567bd0c52ab/go.mod h1:LTEtcbL9qFCXRv1ly69pWE5hXNIXqubdyvwPHex0h6A=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
@@ -144,8 +144,8 @@ github.com/pion/transport v0.8.10 h1:lTiobMEw2PG6BH/mgIVqTV2mBp/mPT+IJLaN8ZxgdHk
 github.com/pion/transport v0.8.10/go.mod h1:tBmha/UCjpum5hqTWhfAEs3CO4/tHSg0MYRhSzR+CZ8=
 github.com/pion/turn v1.4.0 h1:7NUMRehQz4fIo53Qv9ui1kJ0Kr1CA82I81RHKHCeM80=
 github.com/pion/turn v1.4.0/go.mod h1:aDSi6hWX/hd1+gKia9cExZOR0MU95O7zX9p3Gw/P2aU=
-github.com/pion/webrtc/v2 v2.1.16-0.20191129093442-4eebe6bf564f h1:kpW4UqlpGcMnDQT0ZrotcWQOmt20WvMr6BCWeOjhffc=
-github.com/pion/webrtc/v2 v2.1.16-0.20191129093442-4eebe6bf564f/go.mod h1:mnx1SpzMEnH34BJ3yzW3L5TPGqw0eH5q87nu9g7c5v4=
+github.com/pion/webrtc/v2 v2.1.16 h1:WxljXV1jj/1aOeMR1kkrQELYrvX9N6iQLLF0uUKtslk=
+github.com/pion/webrtc/v2 v2.1.16/go.mod h1:mnx1SpzMEnH34BJ3yzW3L5TPGqw0eH5q87nu9g7c5v4=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
