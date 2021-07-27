@@ -6,10 +6,10 @@ require (
 	github.com/DataDog/datadog-go v3.2.0+incompatible
 	github.com/decentraland/auth-go v0.0.0-20190911154210-625ab1240333
 	github.com/decentraland/webrtc-broker v0.0.0-20191129195321-8567bd0c52ab
-	github.com/ethereum/go-ethereum v1.9.3
+	github.com/ethereum/go-ethereum v1.9.25
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.16.0
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.4.2
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/pion/webrtc/v2 v2.1.16
